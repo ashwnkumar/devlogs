@@ -4,6 +4,7 @@ import {
   Boxes,
   BriefcaseBusiness,
   CalendarDays,
+  CheckCircle,
   Clock,
   FolderOpen,
   LayoutDashboard,
@@ -27,9 +28,10 @@ function Sidebar() {
     { label: "Today", route: "/today", icon: Clock },
     { label: "This Week", route: "/this-week", icon: CalendarDays },
     { label: "All Logs", route: "/all-logs", icon: Logs },
-    { label: "Projects", route: "/projects", icon: FolderOpen },
     { label: "Companies", route: "/companies", icon: BriefcaseBusiness },
-    { label: "Settings", route: "/settings", icon: Settings },
+    { label: "Projects", route: "/projects", icon: FolderOpen },
+    { label: "Task Types", route: "/task-types", icon: CheckCircle },
+    { label: "Settings", route: "/settings?tab=general", icon: Settings },
   ];
 
   return (
@@ -41,7 +43,7 @@ function Sidebar() {
           className={`flex items-center gap-3 py-2 px-3 rounded transition-colors ${
             pathname === item.route
               ? "bg-primary/10 text-primary  font-medium"
-              : "hover:bg-muted-foreground/20"
+              : "hover:bg-foreground/10"
           }`}
         >
           {item.icon && <item.icon size={24} strokeWidth={1.5} />}

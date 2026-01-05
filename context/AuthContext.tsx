@@ -33,12 +33,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error("Error fetching user details:", error);
     } else {
-      console.log("User details:", data);
       setUser(data);
     }
   };
-
-  console.log("user from auth context", user);
 
   const login = async (email: string, password: string) => {
     const supabase = await createClient();

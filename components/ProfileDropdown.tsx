@@ -8,18 +8,17 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button } from "./ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-
 function ProfileDropdown() {
-    const { logout, user } = useAuth();
+  const { logout, user } = useAuth();
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleLogout = async () => {
@@ -83,7 +82,7 @@ function ProfileDropdown() {
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link
-              href={"/settings"}
+              href={"/settings?tab=profile"}
               className="w-full flex items-center gap-2 justify-start"
             >
               <Bolt />
