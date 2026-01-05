@@ -2,17 +2,18 @@
 import { createClient } from "@/lib/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
+import type { UserType } from "@/types";
 
 type AuthContextType = {
-  user: User | null;
+  user: UserType | null;
   setSession?: (session: Session | null) => void;
   login?: (
     email: string,
     password: string
   ) => Promise<{
     success: boolean;
-    data?: any;
-    error?: any;
+    data?: unknown;
+    error?: unknown;
   }>;
   logout?: () => void;
 };

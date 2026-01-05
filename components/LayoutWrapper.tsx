@@ -1,21 +1,33 @@
-import { AuthProvider } from "@/context/AuthContext";
 import React from "react";
+import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Sidebar from "./Sidebar";
 
-type Props = { children: React.ReactNode };
+type Props = {
+  children: React.ReactNode;
+};
 
 function LayoutWrapper({ children }: Props) {
   return (
-    <div className="flex flex-col min-h-screen">
-      <AuthProvider>
-        <Navbar />
-        <main className="flex grow w-full justify-center p-5">
-          <div className="w-full max-w-7xl">{children}</div>
-        </main>
-        <Footer />
-      </AuthProvider>
-    </div>
+    <AuthProvider>
+      <div className="flex min-h-screen flex-col">
+        <nav>
+          <Navbar />
+        </nav>
+        <div className="flex flex-1">
+          <aside className="w-64 shrink-0">
+            <Sidebar />
+          </aside>
+          <div className="flex flex-col w-full">
+            <main className="flex-1 p-4">{children}</main>
+            <footer>
+              <Footer />
+            </footer>
+          </div>
+        </div>
+      </div>
+    </AuthProvider>
   );
 }
 
