@@ -24,6 +24,7 @@ export function LoginForm({
     email: "code.by.ashwin@gmail.com",
     password: "devlogs1272!",
   });
+  const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateForm = () => {
@@ -55,10 +56,13 @@ export function LoginForm({
     if (!validateForm()) {
       return toast.error("Please fill all required fields");
     }
+    setLoading(true);
     const res = await login(formData.email, formData.password);
     if (!res.success) {
       toast.error(res.message || "Login failed");
+      setLoading(false);
     } else {
+      setLoading(false);
       toast.success("Logged in successfully");
       redirect("/");
     }
@@ -96,11 +100,12 @@ export function LoginForm({
               error={errors.password}
             />
             <Button
+              disabled={loading}
               type="button"
               onClick={handleSubmit}
-              className="w-full mt-4"
+              className="w-full mt-4 disabled:opacity-50"
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </CardContent>

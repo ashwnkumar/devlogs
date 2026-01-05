@@ -11,6 +11,7 @@ type Props = {
   label?: string;
   error?: string;
   className?: string;
+  inputClassName?: string;
   required?: boolean;
   type?: string;
 } & (
@@ -24,6 +25,7 @@ export default function InputComponent({
   required,
   type = "text",
   className = "",
+  inputClassName = "",
   ...props
 }: Props) {
   const [showPassword, setShowPassword] = useState(false);
@@ -49,6 +51,7 @@ export default function InputComponent({
           <Textarea
             {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
             className={`
+              ${inputClassName}
               ${
                 hasError
                   ? "border-destructive focus-visible:ring-destructive"
@@ -64,6 +67,17 @@ export default function InputComponent({
           <Input
             type={inputType}
             className={`
+              ${inputClassName}
+              ${
+                hasError
+                  ? "border-destructive focus-visible:ring-destructive"
+                  : ""
+              }
+              ${showToggle ? "pr-10" : ""}
+              ${
+                (props as React.InputHTMLAttributes<HTMLInputElement>)
+                  .className || ""
+              }
               ${
                 hasError
                   ? "border-destructive focus-visible:ring-destructive"

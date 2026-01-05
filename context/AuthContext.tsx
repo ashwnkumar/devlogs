@@ -22,6 +22,23 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
+  const fetchUserDetails = async (id: string) => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error) {
+      console.error("Error fetching user details:", error);
+    } else {
+      console.log("User details:", data);
+      setUser(data);
+    }
+  };
+
+  console.log("user from auth context", user);
+
   const login = async (email: string, password: string) => {
     const supabase = await createClient();
     try {
@@ -61,14 +78,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const fetchSession = async () => {
       const supabase = await createClient();
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setUser(session?.user || null);
+        if (session?.user) {
+          fetchUserDetails(session.user.id);
+        }
       });
     };
 
     const authChange = async () => {
       const supabase = await createClient();
       supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user || null);
+        if (session?.user) {
+          fetchUserDetails(session.user.id);
+        }
       });
     };
     authChange();

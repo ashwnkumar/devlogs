@@ -10,7 +10,9 @@ function LayoutWrapper({ children }: Props) {
     <div className="flex flex-col min-h-screen">
       <AuthProvider>
         <Navbar />
-        <main className="flex grow">{children}</main>
+        <main className="flex grow w-full justify-center p-5">
+          <div className="w-full max-w-7xl">{children}</div>
+        </main>
         <Footer />
       </AuthProvider>
     </div>
