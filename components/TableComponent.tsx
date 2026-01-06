@@ -1,6 +1,24 @@
 "use client";
 
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { TableActions, TableColumn } from "@/types";
+import { Ban, EllipsisVertical } from "lucide-react";
+import { useState } from "react";
+import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
+import {
   Table,
   TableBody,
   TableCell,
@@ -8,23 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { Button } from "./ui/button";
-import { Ban, EllipsisVertical } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { TableActions, TableColumn } from "@/types";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 
 type TableComponentProps<T extends object> = {
   data: T[];
@@ -37,6 +38,9 @@ function TableComponent<T extends object>({
   columns,
   actions = [],
 }: TableComponentProps<T>) {
+  const [view, setView] = useState<boolean>(false);
+  const [selected, setSelected] = useState<T>({} as T);
+
   if (data.length === 0) {
     return (
       <Empty className="w-full h-full bg-linear-to-b from-muted to-background ">
@@ -44,68 +48,94 @@ function TableComponent<T extends object>({
           <EmptyMedia variant={"icon"}>
             <Ban />
           </EmptyMedia>
-          <EmptyTitle>404 :/</EmptyTitle>
+          <EmptyTitle>No Data Found</EmptyTitle>
           <EmptyDescription>
             No data found. Add a company to get started or please try again
             later.
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
-          <Button variant={"default"}>Add Company</Button>
-        </EmptyContent>
       </Empty>
     );
   }
 
+  const handleViewDetails = (row: T) => {
+    setView(true);
+    setSelected(row);
+  };
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>#</TableHead>
-          {columns.map((col, colIdx) => (
-            <TableHead key={String(col.key) || colIdx}>{col.label}</TableHead>
-          ))}
-          {actions.length > 0 && <TableHead>Actions</TableHead>}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((row, rowIdx) => (
-          <TableRow key={(row as any).id ?? rowIdx}>
-            <TableCell>{rowIdx + 1}</TableCell>
-            {columns.map((col) => (
-              <TableCell key={String(col.key)}>
-                {col.render ? col.render(row) : (row as any)[col.key]}
-              </TableCell>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>#</TableHead>
+            {columns.map((col, colIdx) => (
+              <TableHead key={String(col.key) || colIdx}>{col.label}</TableHead>
             ))}
-            {actions.length > 0 && (
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant={"outline"} size={"icon"}>
-                      <EllipsisVertical />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-40" align="end">
-                    {actions.map((action, actionIdx) => (
-                      <DropdownMenuItem key={actionIdx} asChild>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start"
-                          onClick={() => action.onClick(row)}
-                        >
-                          {action.icon && <action.icon />}
-                          {action.label}
-                        </Button>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            )}
+            {actions.length > 0 && <TableHead>Actions</TableHead>}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {data.map((row, rowIdx) => (
+            <TableRow onClick={() => handleViewDetails(row)} key={rowIdx}>
+              <TableCell>{rowIdx + 1}</TableCell>
+              {columns.map((col) => (
+                <TableCell key={String(col.key)}>
+                  {col.render ? col.render(row) : (row as any)[col.key]}
+                </TableCell>
+              ))}
+              {actions.length > 0 && (
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant={"outline"} size={"icon"}>
+                        <EllipsisVertical />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-40" align="end">
+                      {actions.map((action, actionIdx) => (
+                        <DropdownMenuItem key={actionIdx} asChild>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => action.onClick(row)}
+                          >
+                            {action.icon && <action.icon />}
+                            {action.label}
+                          </Button>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Sheet open={view} onOpenChange={setView}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle asChild>
+              <h3 className="text-2xl">Details</h3>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="w-full h-full flex flex-col items-center justify-start p-4 gap-4">
+            {columns.map((col) => (
+              <div
+                key={String(col.key)}
+                className="flex items-start flex-col w-full"
+              >
+                <p className="font-medium text-sm">{col.label}:</p>
+                <p className="text-lg font-light">
+                  {col.render ? col.render(selected as T) : selected[col.key]}
+                </p>
+              </div>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
 

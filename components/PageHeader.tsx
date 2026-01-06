@@ -15,7 +15,7 @@ type Props = {
 
 function PageHeader({ title, description, actions = [] }: Props) {
   return (
-    <div className="flex items-center justify-between w-full border-b pb-2">
+    <div className="flex items-center justify-between w-full ">
       <div className="flex flex-col items-start ">
         <h3 className="font-semibold text-2xl">{title}</h3>
         <p className="text-muted-foreground font-normal">{description}</p>

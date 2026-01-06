@@ -7,7 +7,7 @@ export type TableColumn<T extends object> = {
 };
 
 export type TableActions = {
-  label: string;
-  onClick: (row: unknown) => void;
+  label?: string;
+  onClick: (row: any) => void;
   icon?: LucideIcon;
 };
