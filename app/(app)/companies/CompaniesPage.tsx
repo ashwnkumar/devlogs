@@ -8,19 +8,12 @@ import TableComponent from "@/components/TableComponent";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { CompanyType } from "@/types";
 import { Edit, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-type CompanyType = {
-  id: string;
-  user_id: string;
-  name: string;
-  joined_at: string;
-  left_at: string | null;
-  created_at: string;
-  updated_at: string;
-};
+
 
 function CompaniesPage() {
   const { user } = useAuth();

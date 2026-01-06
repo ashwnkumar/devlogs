@@ -2,7 +2,7 @@
 import InputComponent from "@/components/form/InputComponent";
 import PageHeader from "@/components/PageHeader";
 import { useAuth } from "@/context/AuthContext";
-import { UserType } from "@/types/auth";
+import { UserType } from "@/types/user";
 import React, { useEffect, useState } from "react";
 
 function ProfileSettings() {
