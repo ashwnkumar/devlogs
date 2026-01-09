@@ -27,7 +27,7 @@ type Props = {
 };
 
 function ProjectCard({ company }: Props) {
-  const { projects, fetchProjects } = useGlobal();
+  const { projects, fetchProjects, addProject, deleteProject } = useGlobal();
 
   // Separate states for clarity
   const [isAdding, setIsAdding] = useState(false);
@@ -50,30 +50,21 @@ function ProjectCard({ company }: Props) {
 
   // Add Project
   const handleAdd = useCallback(async () => {
-    const trimmed = newProjectName.trim();
-    if (!trimmed) {
-      toast.error("Project name cannot be empty");
-      return;
-    }
+    if (!company?.id || !company?.user_id) return;
 
     setLoading(true);
-    const { error } = await supabase.from("projects").insert({
-      name: trimmed,
-      company_id: company?.id,
-      user_id: company?.user_id,
-    });
-
+    const success = await addProject(
+      newProjectName,
+      company.id,
+      company.user_id
+    );
     setLoading(false);
-    if (error) {
-      toast.error(`Failed to add project: ${error.message}`);
-      console.error(error);
-    } else {
-      toast.success("Project added successfully");
+
+    if (success) {
       setNewProjectName("");
       setIsAdding(false);
-      await fetchProjects();
     }
-  }, [newProjectName, company?.id, company?.user_id, supabase, fetchProjects]);
+  }, [newProjectName, company, addProject]);
 
   // Start Edit
   const startEdit = useCallback((project: ProjectType) => {
@@ -128,23 +119,11 @@ function ProjectCard({ company }: Props) {
     if (!deletingId) return;
 
     setLoading(true);
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", deletingId);
-
+    await deleteProject(deletingId);
     setLoading(false);
     setConfirmOpen(false);
     setDeletingId(null);
-
-    if (error) {
-      toast.error(`Failed to delete project: ${error.message}`);
-      console.error(error);
-    } else {
-      toast.success("Project deleted successfully");
-      await fetchProjects();
-    }
-  }, [deletingId, supabase, fetchProjects]);
+  }, [deletingId, deleteProject]);
 
   const hasProjects = companyProjects.length > 0;
 
@@ -208,7 +187,9 @@ function ProjectCard({ company }: Props) {
                   {isEditing ? (
                     <InputComponent
                       value={editName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setEditName(e.target.value)
+                      }
                       placeholder="Project name"
                       name="edit-project"
                       type="text"

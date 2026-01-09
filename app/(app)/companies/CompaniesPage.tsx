@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { CompanyType } from "@/types";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, ExternalLink, Trash2 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -220,15 +220,19 @@ function CompaniesPage() {
     {
       label: "Name",
       key: "name",
-      render: (row: CompanyType) =>
-        row.left_at === null ? (
-          <div className="flex items-center gap-2">
-            <span>{row.name}</span>
-            <Badge>Current</Badge>
-          </div>
-        ) : (
-          row.name
-        ),
+      render: (row: CompanyType) => (
+        <div className="flex items-center gap-2 ">
+          <span>{row.name}</span>
+            <span className="">
+             <ExternalLink size={16}/>
+            </span>
+          {row.left_at === null && (
+            <span className="">
+              <Badge>Current</Badge>
+            </span>
+          )}
+        </div>
+      ),
     },
     { label: "Location", key: "location" },
     {
@@ -276,6 +280,7 @@ function CompaniesPage() {
             },
           },
         ]}
+        viewPath="companies"
       />
 
       <CustomDialog

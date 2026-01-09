@@ -26,21 +26,38 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
+import { useRouter } from "next/navigation";
 
 type TableComponentProps<T extends object> = {
   data: T[];
   columns: TableColumn<T>[];
   actions?: TableActions[];
+  viewPath?: string
 };
 
 function TableComponent<T extends object>({
   data,
   columns,
   actions = [],
+  viewPath
 }: TableComponentProps<T>) {
+  const router = useRouter();
   const [view, setView] = useState<boolean>(false);
   const [selected, setSelected] = useState<T>({} as T);
 
+  const handleRowClick = (row: T) =>{
+    if (viewPath) {
+      router.push(`/${viewPath}/${row.id}`)
+    } else {
+      handleViewDetails(row)
+    }
+  }
+  
+  const handleViewDetails = (row: T) => {
+    setView(true);
+    setSelected(row);
+  };
+  
   if (data.length === 0) {
     return (
       <Empty className="w-full h-full bg-linear-to-b from-muted to-background ">
@@ -57,12 +74,6 @@ function TableComponent<T extends object>({
       </Empty>
     );
   }
-
-  const handleViewDetails = (row: T) => {
-    setView(true);
-    setSelected(row);
-  };
-
   return (
     <>
       <Table>
@@ -77,7 +88,7 @@ function TableComponent<T extends object>({
         </TableHeader>
         <TableBody>
           {data.map((row, rowIdx) => (
-            <TableRow onClick={() => handleViewDetails(row)} key={rowIdx}>
+            <TableRow onClick={() => handleRowClick(row)} key={rowIdx}>
               <TableCell>{rowIdx + 1}</TableCell>
               {columns.map((col) => (
                 <TableCell key={String(col.key)}>
