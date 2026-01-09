@@ -8,16 +8,17 @@ import PageHeader from "@/components/PageHeader";
 import TableComponent from "@/components/TableComponent";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { CompanyType } from "@/types";
 import { Edit, ExternalLink, Trash2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { addCompany, updateCompany, deleteCompany } from "./actions";
 
 function CompaniesPage() {
-  const { user } = useAuth();
+  const [isPending, startTransition] = useTransition();
 
+  const [loading, setLoading] = useState(false);
   const [companies, setCompanies] = useState<CompanyType[]>([]);
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -35,13 +36,8 @@ function CompaniesPage() {
     is_current: false,
   });
 
-  const validateForm = () => {
-    return (
-      formData.name.trim() && formData.location.trim() && formData.joined_at
-    );
-  };
-
   const fetchCompanies = async () => {
+    setLoading(true); // Add this line
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("companies")
@@ -54,10 +50,14 @@ function CompaniesPage() {
     } else {
       setCompanies(data || []);
     }
+    setLoading(false); // Add this line
   };
 
   useEffect(() => {
-    fetchCompanies();
+    const loadCompanies = async () => {
+      await fetchCompanies();
+    };
+    loadCompanies();
   }, []);
 
   const handleCloseDialog = () => {
@@ -85,104 +85,43 @@ function CompaniesPage() {
     }));
   };
 
-  const handleSaveCompany = async () => {
-    if (!validateForm()) {
-      return toast.error("Please fill all required fields");
-    }
+  const handleSaveCompany = (formDataObj: FormData) => {
+    startTransition(async () => {
+      try {
+        const result = selectedId
+          ? await updateCompany(formDataObj)
+          : await addCompany(formDataObj);
 
-    const supabase = await createClient();
-
-    const payload = {
-      name: formData.name.trim(),
-      location: formData.location.trim(),
-      joined_at: formData.joined_at.toISOString(),
-      left_at: formData.is_current
-        ? null
-        : formData.left_at?.toISOString() ?? null,
-    };
-
-    if (selectedId) {
-      const { error } = await supabase
-        .from("companies")
-        .update(payload)
-        .eq("id", selectedId);
-
-      if (error) {
-        toast.error(`Update failed: ${error.message}`);
-        console.error(error);
-      } else {
-        if (formData.is_current) {
-          const { error } = await supabase
-            .from("users")
-            .update({ current_company: selectedId })
-            .eq("id", user?.id)
-            .select();
-
-          if (error) {
-            toast.error(`Update error: ${error.message}`);
-            console.error(error);
-          } else {
-            toast.success("Current company updated successfully");
-          }
-        }
-
-        toast.success("Company updated successfully");
+        toast.success(result.message);
         await fetchCompanies();
         handleCloseDialog();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "An error occurred"
+        );
       }
-    } else {
-      const { data: companyData, error: addErr } = await supabase
-        .from("companies")
-        .insert({
-          ...payload,
-          user_id: user?.id,
-        })
-        .select()
-        .single();
-
-      if (addErr) {
-        toast.error(`Failed to add company: ${addErr.message}`);
-        console.error(addErr);
-      } else {
-        if (formData.is_current) {
-          const { error } = await supabase
-            .from("users")
-            .update({ current_company: companyData.id })
-            .eq("id", user?.id)
-            .select();
-
-          if (error) {
-            toast.error(`Update error: ${error.message}`);
-            console.error(error);
-          } else {
-            toast.success("Current company updated successfully");
-          }
-        }
-
-        toast.success("Company added successfully");
-        await fetchCompanies();
-        handleCloseDialog();
-      }
-    }
+    });
   };
 
-  const handleDeleteRow = async () => {
+  const handleDeleteRow = () => {
     if (!selectedId) return;
 
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("companies")
-      .delete()
-      .eq("id", selectedId);
+    const formData = new FormData();
+    formData.append("id", selectedId);
 
-    if (error) {
-      toast.error(`Delete failed: ${error.message}`);
-      console.error(error);
-    } else {
-      toast.success("Company deleted successfully");
-      await fetchCompanies();
-      handleCloseDialog();
-    }
+    startTransition(async () => {
+      try {
+        const result = await deleteCompany(formData);
+        toast.success(result.message);
+        await fetchCompanies();
+        setConfirm(false);
+        setSelectedId(null);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "An error occurred"
+        );
+      }
+    });
   };
 
   const handleEditRow = (row: CompanyType) => {
@@ -223,9 +162,9 @@ function CompaniesPage() {
       render: (row: CompanyType) => (
         <div className="flex items-center gap-2 ">
           <span>{row.name}</span>
-            <span className="">
-             <ExternalLink size={16}/>
-            </span>
+          <span className="">
+            <ExternalLink size={16} />
+          </span>
           {row.left_at === null && (
             <span className="">
               <Badge>Current</Badge>
@@ -281,6 +220,7 @@ function CompaniesPage() {
           },
         ]}
         viewPath="companies"
+        loading={loading}
       />
 
       <CustomDialog
@@ -288,10 +228,20 @@ function CompaniesPage() {
         open={open}
         onOpenChange={setOpen}
         onCancel={handleCloseDialog}
-        onConfirm={handleSaveCompany}
+        onConfirm={() => {
+          const form = document.getElementById(
+            "company-form"
+          ) as HTMLFormElement;
+          if (form) {
+            const formData = new FormData(form);
+            handleSaveCompany(formData);
+          }
+        }}
         confirmText={selectedId ? "Update Company" : "Add Company"}
+        isPending={isPending}
       >
-        <div className="grid grid-cols-2 gap-4">
+        <form id="company-form" className="grid grid-cols-2 gap-4">
+          {selectedId && <input type="hidden" name="id" value={selectedId} />}
           <InputComponent
             name="name"
             label="Name"
@@ -308,6 +258,11 @@ function CompaniesPage() {
             onChange={handleInputChange}
           />
 
+          <input
+            type="hidden"
+            name="joined_at"
+            value={formData.joined_at.toISOString()}
+          />
           <DatePicker
             label="Joined At"
             required
@@ -317,6 +272,11 @@ function CompaniesPage() {
             }
           />
 
+          <input
+            type="hidden"
+            name="left_at"
+            value={formData.left_at?.toISOString() ?? ""}
+          />
           <DatePicker
             label="Left At"
             disabled={formData.is_current}
@@ -326,6 +286,11 @@ function CompaniesPage() {
             }
           />
 
+          <input
+            type="hidden"
+            name="is_current"
+            value={formData.is_current.toString()}
+          />
           <div className="col-span-2 flex items-center gap-2">
             <Checkbox
               id="is_current"
@@ -341,7 +306,7 @@ function CompaniesPage() {
               I’m currently working here
             </label>
           </div>
-        </div>
+        </form>
       </CustomDialog>
 
       <ConfirmDialog

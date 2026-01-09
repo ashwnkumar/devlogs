@@ -24,6 +24,8 @@ type Props = {
     | "outline";
   onConfirm?: () => void;
   onCancel?: () => void;
+  hideOptions?: boolean;
+  isPending?: boolean;
   children: React.ReactNode;
 };
 
@@ -37,6 +39,8 @@ function CustomDialog({
   confirmVariant = "default",
   onConfirm,
   onCancel,
+  hideOptions = false,
+  isPending = false,
   children,
 }: Props) {
   return (
@@ -52,15 +56,20 @@ function CustomDialog({
         </DialogHeader>
 
         {children}
-
-        <DialogFooter>
-          <Button onClick={onCancel} variant="outline">
-            {cancelText}
-          </Button>
-          <Button onClick={onConfirm} variant={confirmVariant}>
-            {confirmText}
-          </Button>
-        </DialogFooter>
+        {!hideOptions && (
+          <DialogFooter>
+            <Button onClick={onCancel} variant="outline" disabled={isPending}>
+              {cancelText}
+            </Button>
+            <Button
+              onClick={onConfirm}
+              variant={confirmVariant}
+              disabled={isPending}
+            >
+              {isPending ? "Loading..." : confirmText}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

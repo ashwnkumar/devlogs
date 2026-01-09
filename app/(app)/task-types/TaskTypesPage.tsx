@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGlobal } from "@/context/GlobalContext";
 import { Copy, Plus } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 type TaskType = {
@@ -18,11 +19,11 @@ type TaskType = {
 
 function TaskTypesPage() {
   
-  const {taskTypes} = useGlobal();
+  const {taskTypes, globalLoading} = useGlobal();
 
 
-
-  const handleCopyColor = (color: string) => {
+  const handleCopyColor = (e: React.MouseEvent<HTMLButtonElement> ,color: string) => {
+    e.stopPropagation()
     navigator.clipboard.writeText(color);
     toast.success(`Color ${color} copied to clipboard!`);
   };
@@ -42,7 +43,7 @@ function TaskTypesPage() {
             variant={"ghost"}
             size={"icon"}
             className="hover:bg-background!"
-            onClick={() => handleCopyColor(row.color)}
+            onClick={(e) => handleCopyColor(e, row.color)}
           >
             <Copy />
           </Button>
@@ -79,7 +80,7 @@ function TaskTypesPage() {
   return (
     <div className="w-full h-full flex flex-col items-center justify-start gap-6">
       <PageHeader title="Task Types" />
-      <TableComponent data={taskTypes} columns={columns} />
+      <TableComponent data={taskTypes} columns={columns} loading={globalLoading} />
     </div>
   );
 }

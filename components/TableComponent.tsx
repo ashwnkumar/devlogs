@@ -7,6 +7,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton"; // ← Add this import
 import { TableActions, TableColumn } from "@/types";
 import { Ban, EllipsisVertical } from "lucide-react";
 import { useState } from "react";
@@ -32,35 +33,79 @@ type TableComponentProps<T extends object> = {
   data: T[];
   columns: TableColumn<T>[];
   actions?: TableActions[];
-  viewPath?: string
+  viewPath?: string;
+  loading?: boolean;
 };
 
 function TableComponent<T extends object>({
   data,
   columns,
   actions = [],
-  viewPath
+  viewPath,
+  loading = false, // default to false
 }: TableComponentProps<T>) {
   const router = useRouter();
   const [view, setView] = useState<boolean>(false);
   const [selected, setSelected] = useState<T>({} as T);
 
-  const handleRowClick = (row: T) =>{
+  const handleRowClick = (row: T) => {
     if (viewPath) {
-      router.push(`/${viewPath}/${row.id}`)
+      router.push(`/${viewPath}/${(row as any).id}`);
     } else {
-      handleViewDetails(row)
+      handleViewDetails(row);
     }
-  }
-  
+  };
+
   const handleViewDetails = (row: T) => {
     setView(true);
     setSelected(row);
   };
-  
+
+  // Loading state
+  if (loading) {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>#</TableHead>
+            {columns.map((col, colIdx) => (
+              <TableHead key={String(col.key) || colIdx}>{col.label}</TableHead>
+            ))}
+            {actions.length > 0 && <TableHead>Actions</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {[...Array(8)].map(
+            (
+              _,
+              i // Show 8 skeleton rows (adjust as needed)
+            ) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className="aspect-square rounded-full w-8" />
+                </TableCell>
+                {columns.map((col, colIdx) => (
+                  <TableCell key={String(col.key) || colIdx}>
+                    <Skeleton className="h-4 w-full max-w-[200px]" />
+                  </TableCell>
+                ))}
+                {actions.length > 0 && (
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </TableCell>
+                )}
+              </TableRow>
+            )
+          )}
+        </TableBody>
+      </Table>
+    );
+  }
+
+  // Empty state
   if (data.length === 0) {
     return (
-      <Empty className="w-full h-full bg-linear-to-b from-muted to-background ">
+      <Empty className="w-full h-full bg-linear-to-b from-muted to-background">
         <EmptyHeader>
           <EmptyMedia variant={"icon"}>
             <Ban />
@@ -74,6 +119,8 @@ function TableComponent<T extends object>({
       </Empty>
     );
   }
+
+  // Normal table
   return (
     <>
       <Table>
@@ -88,7 +135,11 @@ function TableComponent<T extends object>({
         </TableHeader>
         <TableBody>
           {data.map((row, rowIdx) => (
-            <TableRow onClick={() => handleRowClick(row)} key={rowIdx}>
+            <TableRow
+              onClick={() => handleRowClick(row)}
+              key={rowIdx}
+              className="cursor-pointer"
+            >
               <TableCell>{rowIdx + 1}</TableCell>
               {columns.map((col) => (
                 <TableCell key={String(col.key)}>
@@ -111,7 +162,9 @@ function TableComponent<T extends object>({
                             className="w-full justify-start"
                             onClick={() => action.onClick(row)}
                           >
-                            {action.icon && <action.icon />}
+                            {action.icon && (
+                              <action.icon className="mr-2 h-4 w-4" />
+                            )}
                             {action.label}
                           </Button>
                         </DropdownMenuItem>
@@ -124,6 +177,7 @@ function TableComponent<T extends object>({
           ))}
         </TableBody>
       </Table>
+
       <Sheet open={view} onOpenChange={setView}>
         <SheetContent>
           <SheetHeader>
@@ -139,7 +193,9 @@ function TableComponent<T extends object>({
               >
                 <p className="font-medium text-sm">{col.label}:</p>
                 <p className="text-lg font-light">
-                  {col.render ? col.render(selected as T) : selected[col.key]}
+                  {col.render
+                    ? col.render(selected as T)
+                    : (selected as any)[col.key]}
                 </p>
               </div>
             ))}

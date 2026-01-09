@@ -34,6 +34,11 @@ function Sidebar() {
     { label: "Settings", route: "/settings?tab=general", icon: Settings },
   ];
 
+  const isActive = (route: string) => {
+    if (pathname.includes(route)) return true;
+    return false;
+  }
+
   return (
     <div className="border-r w-full h-full p-4 flex flex-col justify-start gap-2">
       {sidebarItems.map((item, idx) => (
@@ -41,7 +46,7 @@ function Sidebar() {
           key={idx}
           href={item.route}
           className={`flex items-center gap-3 py-2 px-3 rounded transition-colors ${
-            pathname === item.route
+            isActive(item.route) 
               ? "bg-primary/10 text-primary  font-medium"
               : "hover:bg-foreground/10"
           }`}

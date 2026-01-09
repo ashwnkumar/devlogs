@@ -15,6 +15,7 @@ type GlobalContextType = {
   companies: CompanyType[];
   projects: ProjectType[];
   taskTypes: TaskTypeType[];
+  globalLoading: boolean;
   fetchCompanies: () => Promise<void>;
   fetchProjects: () => Promise<void>;
   addProject: (
@@ -32,34 +33,45 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const [companies, setCompanies] = useState<CompanyType[]>([]);
   const [projects, setProjects] = useState<ProjectType[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskTypeType[]>([]);
+  const [globalLoading, setGlobalLoading] = useState(false);
 
   const fetchCompanies = useCallback(async () => {
     if (!user) return;
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("companies")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .eq("user_id", user.id);
-    if (error) {
-      console.error("Error fetching companies:", error);
-    } else {
-      setCompanies(data || []);
+    setGlobalLoading(true);
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("companies")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .eq("user_id", user.id);
+      if (error) {
+        console.error("Error fetching companies:", error);
+      } else {
+        setCompanies(data || []);
+      }
+    } finally {
+      setGlobalLoading(false);
     }
   }, [user]);
 
   const fetchProjects = useCallback(async () => {
     if (!user) return;
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .eq("user_id", user.id);
-    if (error) {
-      console.error("Error fetching projects:", error);
-    } else {
-      setProjects(data || []);
+    setGlobalLoading(true);
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .eq("user_id", user.id);
+      if (error) {
+        console.error("Error fetching projects:", error);
+      } else {
+        setProjects(data || []);
+      }
+    } finally {
+      setGlobalLoading(false);
     }
   }, [user]);
 
@@ -74,54 +86,69 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
-    const supabase = await createClient();
-    const { error } = await supabase.from("projects").insert({
-      name: trimmed,
-      company_id: companyId,
-      user_id: userId,
-    });
+    setGlobalLoading(true);
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.from("projects").insert({
+        name: trimmed,
+        company_id: companyId,
+        user_id: userId,
+      });
 
-    if (error) {
-      toast.error(`Failed to add project: ${error.message}`);
-      console.error(error);
-      return false;
-    } else {
-      toast.success("Project added successfully");
-      await fetchProjects();
-      return true;
+      if (error) {
+        toast.error(`Failed to add project: ${error.message}`);
+        console.error(error);
+        return false;
+      } else {
+        toast.success("Project added successfully");
+        await fetchProjects();
+        return true;
+      }
+    } finally {
+      setGlobalLoading(false);
     }
   };
 
   const deleteProject = async (projectId: string): Promise<boolean> => {
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", projectId);
+    setGlobalLoading(true);
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId);
 
-    if (error) {
-      toast.error(`Failed to delete project: ${error.message}`);
-      console.error(error);
-      return false;
-    } else {
-      toast.success("Project deleted successfully");
-      await fetchProjects();
-      return true;
+      if (error) {
+        toast.error(`Failed to delete project: ${error.message}`);
+        console.error(error);
+        return false;
+      } else {
+        toast.success("Project deleted successfully");
+        await fetchProjects();
+        return true;
+      }
+    } finally {
+      setGlobalLoading(false);
     }
   };
 
   const fetchTaskTypes = useCallback(async () => {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("task_types")
-      .select("*")
-      .eq("user_id", user?.id)
-      .order("created_at", { ascending: false });
+    setGlobalLoading(true);
+    try {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from("task_types")
+        .select("*")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching task types:", error);
-    } else {
-      setTaskTypes(data);
+      if (error) {
+        console.error("Error fetching task types:", error);
+      } else {
+        setTaskTypes(data);
+      }
+    } finally {
+      setGlobalLoading(false);
     }
   }, [user]);
 
@@ -137,6 +164,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
         companies,
         projects,
         taskTypes,
+        globalLoading,
         fetchCompanies,
         fetchProjects,
         addProject,
