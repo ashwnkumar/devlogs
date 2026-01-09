@@ -41,6 +41,51 @@ function CompanyDetailsPage() {
     fetchCompany();
   }, [companyId]);
 
+  const viewData = [
+    {
+      label: "Company Name",
+      value: <span className="text-lg font-medium">{company?.name}</span>,
+    },
+    {
+      label: "Location",
+      value: <span className="text-lg">{company?.location}</span>,
+    },
+    {
+      label: "Joined At",
+      value: (
+        <span className="text-lg">
+          {company?.joined_at ? new Date(company.joined_at).toLocaleDateString() : "N/A"}
+        </span>
+      ),
+    },
+    {
+      label: "Left At",
+      value: (
+        <span className="text-lg">
+          {company?.left_at
+            ? new Date(company.left_at).toLocaleDateString()
+            : "Currently working here"}
+        </span>
+      ),
+    },
+    {
+      label: "Created At",
+      value: (
+        <span className="text-lg">
+          {company?.created_at ? new Date(company.created_at).toLocaleString() : "N/A"}
+        </span>
+      ),
+    },
+    {
+      label: "Last Updated",
+      value: (
+        <span className="text-lg">
+          {company?.updated_at ? new Date(company.updated_at).toLocaleString() : "N/A"}
+        </span>
+      ),
+    },
+  ];
+
   if (loading) {
     return (
       <div className="flex flex-col w-full h-full gap-8">
@@ -82,68 +127,14 @@ function CompanyDetailsPage() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
+        {viewData.map((item, idx) => (
+          <div key={idx}>
             <label className="text-sm font-medium text-muted-foreground">
-              Company Name
+              {item.label}
             </label>
-            <p className="text-lg font-medium">{company.name}</p>
+            <p>{item.value || "NA"}</p>
           </div>
-
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              Location
-            </label>
-            <p className="text-lg">{company.location}</p>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              Joined At
-            </label>
-            <p className="text-lg">
-              {new Date(company.joined_at).toLocaleDateString()}
-            </p>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              Left At
-            </label>
-            <p className="text-lg">
-              {company.left_at
-                ? new Date(company.left_at).toLocaleDateString()
-                : "Currently working here"}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              Created At
-            </label>
-            <p className="text-lg">
-              {new Date(company.created_at).toLocaleString()}
-            </p>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              Last Updated
-            </label>
-            <p className="text-lg">
-              {new Date(company.updated_at).toLocaleString()}
-            </p>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              Company ID
-            </label>
-            <p className="text-lg font-mono text-sm">{company.id}</p>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
