@@ -13,7 +13,6 @@ import { createClient } from "@/lib/supabase/client";
 import { CompanyType, ProjectType } from "@/types";
 import {
   Check,
-  ChevronsUpDown,
   FolderOpen,
   Loader2,
   Pencil,
@@ -23,13 +22,12 @@ import {
 } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-
 type Props = {
   company: CompanyType | null;
 };
 
-function CompanyCard({ company }: Props) {
-  const { userProjects, fetchProjects } = useGlobal();
+function ProjectCard({ company }: Props) {
+  const { projects, fetchProjects } = useGlobal();
 
   // Separate states for clarity
   const [isAdding, setIsAdding] = useState(false);
@@ -47,8 +45,8 @@ function CompanyCard({ company }: Props) {
   const supabase = useMemo(() => createClient(), []);
 
   const companyProjects = useMemo(() => {
-    return userProjects?.filter((p) => p.company_id === company?.id) ?? [];
-  }, [userProjects, company?.id]);
+    return projects?.filter((p) => p.company_id === company?.id) ?? [];
+  }, [projects, company?.id]);
 
   // Add Project
   const handleAdd = useCallback(async () => {
@@ -210,7 +208,7 @@ function CompanyCard({ company }: Props) {
                   {isEditing ? (
                     <InputComponent
                       value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
                       placeholder="Project name"
                       name="edit-project"
                       type="text"
@@ -219,7 +217,10 @@ function CompanyCard({ company }: Props) {
                       inputClassName="bg-background"
                     />
                   ) : (
-                    <p className="truncate flex-1">{project.name}</p>
+                    <p className="truncate flex-1 flex items-center gap-2">
+                      <FolderOpen size={16} />
+                      <span>{project.name}</span>
+                    </p>
                   )}
 
                   <div className="flex items-center gap-1.5">
@@ -329,4 +330,4 @@ function CompanyCard({ company }: Props) {
   );
 }
 
-export default CompanyCard;
+export default ProjectCard;

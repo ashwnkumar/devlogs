@@ -1,25 +1,23 @@
 "use client";
 import NoData from "@/components/NoData";
 import PageHeader from "@/components/PageHeader";
-import { useGlobal } from "@/context/GlobalContext";
-import { CompanyType } from "@/types";
-import { useMemo, useState } from "react";
-import CompanyCard from "./CompanyCard";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGlobal } from "@/context/GlobalContext";
+import { X } from "lucide-react";
+import { useMemo, useState } from "react";
+import CompanyCard from "./ProjectCard";
 
 function ProjectPage() {
-  const { userCompanies } = useGlobal();
+  const { companies } = useGlobal();
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
 
   // Memoize filtered companies to avoid unnecessary re-computations
   const filteredCompanies = useMemo(() => {
-    if (selectedCompanyIds.length === 0) return userCompanies;
-    return userCompanies.filter((company) =>
+    if (selectedCompanyIds.length === 0) return companies;
+    return companies.filter((company) =>
       selectedCompanyIds.includes(company.id)
     );
-  }, [selectedCompanyIds, userCompanies]);
+  }, [selectedCompanyIds, companies]);
 
   const toggleCompany = (id: string) => {
     setSelectedCompanyIds((prev) =>
@@ -69,7 +67,7 @@ function ProjectPage() {
           </button>
 
           {/* Company filter badges */}
-          {userCompanies?.map((company) => {
+          {companies?.map((company) => {
             const isSelected = selectedCompanyIds.includes(company.id);
 
             return (

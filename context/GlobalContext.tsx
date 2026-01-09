@@ -1,12 +1,13 @@
 "use client";
-import { CompanyType, ProjectType } from "@/types";
+import { CompanyType, ProjectType, TaskTypeType } from "@/types";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { createClient } from "@/lib/supabase/client";
 
 type GlobalContextType = {
-  userCompanies: CompanyType[];
-  userProjects: ProjectType[];
+  companies: CompanyType[];
+  projects: ProjectType[];
+  taskTypes: TaskTypeType[];
   fetchCompanies: () => Promise<void>;
   fetchProjects: () => Promise<void>;
 };
@@ -15,8 +16,9 @@ const GlobalContext = createContext<GlobalContextType | null>(null);
 
 export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [userCompanies, setUserCompanies] = useState<CompanyType[]>([]);
-  const [userProjects, setUserProjects] = useState<ProjectType[]>([]);
+  const [companies, setCompanies] = useState<CompanyType[]>([]);
+  const [projects, setProjects] = useState<ProjectType[]>([]);
+  const [taskTypes, setTaskTypes] = useState<TaskTypeType[]>([]);
 
   const fetchCompanies = async () => {
     if (!user) return;
@@ -29,7 +31,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error("Error fetching companies:", error);
     } else {
-      setUserCompanies(data || []);
+      setCompanies(data || []);
     }
   };
   const fetchProjects = async () => {
@@ -43,10 +45,27 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     if (error) {
       console.error("Error fetching projects:", error);
     } else {
-      setUserProjects(data || []);
+      setProjects(data || []);
     }
   };
+
+  const fetchTaskTypes = async () => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("task_types")
+      .select("*")
+      .eq("user_id", user?.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching task types:", error);
+    } else {
+      setTaskTypes(data);
+    }
+  };
+  
   useEffect(() => {
+    fetchTaskTypes();
     fetchCompanies();
     fetchProjects();
   }, [user]);
@@ -54,8 +73,9 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   return (
     <GlobalContext.Provider
       value={{
-        userCompanies,
-        userProjects,
+        companies,
+        projects,
+        taskTypes,
         fetchCompanies,
         fetchProjects,
       }}

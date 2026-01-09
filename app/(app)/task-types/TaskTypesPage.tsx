@@ -4,10 +4,8 @@ import PageHeader from "@/components/PageHeader";
 import TableComponent from "@/components/TableComponent";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
-import { createClient } from "@/lib/supabase/client";
+import { useGlobal } from "@/context/GlobalContext";
 import { Copy, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type TaskType = {
@@ -19,30 +17,10 @@ type TaskType = {
 };
 
 function TaskTypesPage() {
-  const { user } = useAuth();
-  const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
+  
+  const {taskTypes} = useGlobal();
 
-  useEffect(() => {
-    const fetch = async () => {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from("task_types")
-        .select("*")
-        .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
 
-      if (error) {
-        toast.error(`Something went wrong: ${error.message}`);
-        console.error("Error fetching task types:", error);
-      } else {
-        setTaskTypes(data);
-      }
-    };
-
-    if (user) {
-      fetch();
-    }
-  }, [user]);
 
   const handleCopyColor = (color: string) => {
     navigator.clipboard.writeText(color);

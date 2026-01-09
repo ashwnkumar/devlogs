@@ -18,6 +18,7 @@ type Props = {
   required?: boolean;
   value?: Date | null;
   onChange?: (date: Date | undefined) => void;
+  disabled?: boolean;
 };
 
 export function DatePicker({
@@ -26,6 +27,7 @@ export function DatePicker({
   required,
   value,
   onChange,
+  disabled,
 }: Props) {
   const [open, setOpen] = React.useState(false);
 
@@ -42,8 +44,8 @@ export function DatePicker({
         {label}
         {required && <span className="text-destructive">*</span>}
       </Label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <Popover  open={open} onOpenChange={setOpen}>
+        <PopoverTrigger disabled={disabled} asChild>
           <Button
             variant="outline"
             id="date"
@@ -51,14 +53,23 @@ export function DatePicker({
           >
             {value
               ? value instanceof Date
-                ? value.toLocaleDateString()
-                : new Date(value).toLocaleDateString()
+                ? new Intl.DateTimeFormat("en-GB", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  }).format(value)
+                : new Intl.DateTimeFormat("en-GB", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  }).format(new Date(value))
               : "Select a date"}
             <ChevronDownIcon />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full overflow-hidden p-0" align="start">
           <Calendar
+         
             mode="single"
             selected={value}
             captionLayout="dropdown"
