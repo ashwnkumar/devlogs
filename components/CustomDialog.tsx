@@ -54,8 +54,7 @@ function CustomDialog({
             )}
           </DialogTitle>
         </DialogHeader>
-
-        {children}
+        <div className="max-h-[70vh] overflow-auto">{children}</div>
         {!hideOptions && (
           <DialogFooter>
             <Button onClick={onCancel} variant="outline" disabled={isPending}>

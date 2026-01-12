@@ -111,10 +111,6 @@ function TableComponent<T extends object>({
             <Ban />
           </EmptyMedia>
           <EmptyTitle>No Data Found</EmptyTitle>
-          <EmptyDescription>
-            No data found. Add a company to get started or please try again
-            later.
-          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     );

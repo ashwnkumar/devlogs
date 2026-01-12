@@ -12,47 +12,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const column_name = formData.get("column_name") as string | null;
+  const projectsData = formData.get("projects") as string;
+  const projectNames = JSON.parse(projectsData) as string[];
   const company_id = formData.get("company_id") as string | null;
 
-  if (!file || !column_name || !company_id) {
+  if (!company_id || projectNames?.length === 0)
     return NextResponse.json(
       { error: "Missing Required Fields" },
-      { status: 400 }
+      { status: 500 }
     );
-  }
 
   try {
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(await file.arrayBuffer());
-    const sheet = workbook.getWorksheet(1);
-    if (!sheet) throw new Error("No Worksheet Found");
-
-    const headerRow = sheet.getRow(1);
-    const headers = headerRow.values as string[];
-
-    const colIdx = headers.findIndex(
-      (h) =>
-        h?.toString().trim().toLowerCase() === column_name.trim().toLowerCase()
-    );
-
-    if (colIdx === -1) {
-      throw new Error(`Column ${column_name} not Found!`);
-    }
-
-    const projectNames = new Set<string>();
-
-    sheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
-      if (rowNumber === 1) return;
-      const cellValue = row.getCell(colIdx).text?.trim();
-      if (cellValue) projectNames.add(cellValue);
-    });
-
-    if (projectNames.size === 0)
-      throw new Error("No Valid Project Names Found!");
-
-    const inserts = Array.from(projectNames).map((name) => ({
+    const inserts = projectNames?.map((name) => ({
       name,
       user_id: user.id,
       company_id: company_id!,

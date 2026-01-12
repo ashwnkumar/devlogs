@@ -7,9 +7,11 @@ import BulkUploadDialog from "@/components/BulkUploadDialog";
 import { useGlobal } from "@/context/GlobalContext";
 import { createClient } from "@/lib/supabase/client";
 import { CompanyType, ProjectType } from "@/types";
+import { formatDate } from "@/lib/utils";
 import { Plus, Upload } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import TableComponent from "@/components/TableComponent";
 
 function CompanyDetailsPage() {
   const params = useParams();
@@ -27,32 +29,31 @@ function CompanyDetailsPage() {
   const [addingProject, setAddingProject] = useState(false);
 
   // Bulk upload dialog state
-  const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(true);
+  const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchCompany = async () => {
-      if (!companyId) return;
+  const fetchCompany = async () => {
+    if (!companyId) return;
 
-      try {
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from("companies")
-          .select("*")
-          .eq("id", companyId)
-          .single();
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("companies")
+        .select("*")
+        .eq("id", companyId)
+        .single();
 
-        if (error) {
-          setError(error.message);
-        } else {
-          setCompany(data);
-        }
-      } catch {
-        setError("Failed to fetch company data");
-      } finally {
-        setLoading(false);
+      if (error) {
+        setError(error.message);
+      } else {
+        setCompany(data);
       }
-    };
-
+    } catch {
+      setError("Failed to fetch company data");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
     fetchCompany();
   }, [companyId]);
 
@@ -100,6 +101,20 @@ function CompanyDetailsPage() {
       label: "Add Project",
       icon: Plus,
       onClick: () => setAddProjectDialogOpen(true),
+    },
+  ];
+
+  const projectColumns = [
+    { label: "Name", key: "name" },
+    {
+      label: "Created At",
+      key: "created_at",
+      render: (row: ProjectType) => formatDate(row.created_at),
+    },
+    {
+      label: "Updated At",
+      key: "updated_at",
+      render: (row: ProjectType) => formatDate(row.updated_at),
     },
   ];
 
@@ -210,28 +225,10 @@ function CompanyDetailsPage() {
         <PageHeader
           title={"Projects"}
           description={`Projects you worked on at ${company.name}`}
-          actions={projectActions}
         />
 
-        <div className="w-full grid grid-cols-2 md:grid-cols-3 gap-6">
-          {projects && projects.length > 0 ? (
-            projects.map((project) => (
-              <div
-                key={project.id}
-                className="p-4 w-full rounded-lg borde shadow-sm bg-card flex flex-col hover:shadow-md transition"
-              >
-                <p className="font-semibold text-lg">{project.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {" "}
-                  Created: {new Date(project.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full w-full text-center text-muted-foreground text-sm py-6">
-              No projects found for this company.
-            </div>
-          )}
+        <div className="w-full ">
+          <TableComponent data={projects} columns={projectColumns} />
         </div>
       </div>
 
@@ -266,8 +263,7 @@ function CompanyDetailsPage() {
         onOpenChange={setBulkUploadDialogOpen}
         companyId={companyId}
         onUploadSuccess={() => {
-          // Refresh the projects list after successful upload
-          // The global context will automatically update the projects state
+          fetchCompany();
         }}
       />
     </div>
