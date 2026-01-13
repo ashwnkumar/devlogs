@@ -1,3 +1,4 @@
+"use client";
 import { ArrowLeft, LucideIcon } from "lucide-react";
 import { ComponentPropsWithoutRef } from "react";
 import { Button } from "./ui/button";

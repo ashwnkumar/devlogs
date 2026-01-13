@@ -35,9 +35,11 @@ function Sidebar() {
   ];
 
   const isActive = (route: string) => {
-    if (pathname.includes(route)) return true;
+    if (route === "/" && pathname === "/") return true;
+    if (route !== "/" && pathname.startsWith(route)) return true;
     return false;
-  }
+  };
+
 
   return (
     <div className="border-r w-full h-full p-4 flex flex-col justify-start gap-2">
