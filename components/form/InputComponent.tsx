@@ -26,6 +26,7 @@ export default function InputComponent({
   type = "text",
   className = "",
   inputClassName = "",
+  placeholder=`Enter ${label}`,
   ...props
 }: Props) {
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +40,7 @@ export default function InputComponent({
   const showToggle = isPassword && !isTextarea;
 
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
+    <div className={`flex flex-col gap-1 ${className}`}>
       {label && (
         <Label htmlFor={props.id} className="text-sm font-medium">
           {label} {required && <span className="text-destructive">*</span>}
@@ -66,6 +67,7 @@ export default function InputComponent({
         ) : (
           <Input
             type={inputType}
+            placeholder={placeholder}
             className={`
               ${inputClassName}
               ${

@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"; // ← Add this import
 import { TableActions, TableColumn } from "@/types";
 import { Ban, EllipsisVertical } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -28,13 +28,16 @@ import {
   TableRow,
 } from "./ui/table";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 type TableComponentProps<T extends object> = {
-  data: T[];
+  data? : T[];
   columns: TableColumn<T>[];
   actions?: TableActions[];
   viewPath?: string;
-  loading?: boolean;
+  emptyMessage?: string
+  getPath?: string
+  revalidate?: number | string
 };
 
 function TableComponent<T extends object>({
@@ -42,11 +45,39 @@ function TableComponent<T extends object>({
   columns,
   actions = [],
   viewPath,
-  loading = false, // default to false
+  emptyMessage,
+  getPath,
+  revalidate
 }: TableComponentProps<T>) {
   const router = useRouter();
   const [view, setView] = useState<boolean>(false);
   const [selected, setSelected] = useState<T>({} as T);
+  const [tableData, setTableData] = useState<[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api${getPath}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch data");
+      }
+
+      const data = await response.json();
+      setTableData(data.data || data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [revalidate])
 
   const handleRowClick = (row: T) => {
     if (viewPath) {
@@ -103,7 +134,7 @@ function TableComponent<T extends object>({
   }
 
   // Empty state
-  if (data.length === 0) {
+  if (tableData.length === 0) {
     return (
       <Empty className="w-full h-full bg-linear-to-b from-muted to-background">
         <EmptyHeader>
@@ -111,6 +142,7 @@ function TableComponent<T extends object>({
             <Ban />
           </EmptyMedia>
           <EmptyTitle>No Data Found</EmptyTitle>
+          {emptyMessage && <EmptyDescription>{emptyMessage}</EmptyDescription>}
         </EmptyHeader>
       </Empty>
     );
@@ -130,7 +162,7 @@ function TableComponent<T extends object>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((row, rowIdx) => (
+          {tableData.map((row, rowIdx) => (
             <TableRow
               onClick={() => handleRowClick(row)}
               key={rowIdx}
