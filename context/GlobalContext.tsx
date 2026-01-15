@@ -15,7 +15,8 @@ type GlobalContextType = {
   companies: CompanyType[];
   taskTypes: TaskTypeType[];
   globalLoading: boolean;
-  setGlobalLoading: (globalLoading: boolean) => void,
+  currentProjects: ProjectType[];
+  setGlobalLoading: (globalLoading: boolean) => void;
   fetchCompanies: () => Promise<void>;
   handleAddProject: (name: string, companyId: string) => Promise<boolean>;
   handleDeleteProject: (projectId: string) => Promise<boolean>;
@@ -27,6 +28,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [companies, setCompanies] = useState<CompanyType[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskTypeType[]>([]);
+  const [currentProjects, setCurrentProjects] = useState<ProjectType>([]);
   const [globalLoading, setGlobalLoading] = useState(false);
 
   const fetchCompanies = useCallback(async () => {
@@ -49,7 +51,23 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  
+  const fetchCurrentProjects = async () => {
+    try {
+      const response = await fetch(
+        `/api/projects?company_id=${user?.current_company}`
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch data");
+      }
+
+      const data = await response.json();
+      setCurrentProjects(data.data || data || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   const handleAddProject = async (
     name: string,
@@ -140,7 +158,8 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchTaskTypes();
     fetchCompanies();
-  }, [user, fetchTaskTypes, fetchCompanies]);
+    fetchCurrentProjects();
+  }, [user]);
 
   return (
     <GlobalContext.Provider
@@ -148,6 +167,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
         companies,
         taskTypes,
         globalLoading,
+        currentProjects,
         fetchCompanies,
         setGlobalLoading,
         handleAddProject,

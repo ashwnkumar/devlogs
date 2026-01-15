@@ -5,21 +5,37 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(isoDate: string | null | undefined): string {
-  if (!isoDate) return '-';
+type DateFormat = "date" | "date-time" | "time";
+
+export function formatDate(
+  isoDate: string | null | undefined,
+  format: DateFormat = "date-time"
+): string {
+  if (!isoDate) return "-";
 
   try {
     const date = new Date(isoDate);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
+    if (isNaN(date.getTime())) return "-";
 
-    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    switch (format) {
+      case "date":
+        return `${day}/${month}/${year}`;
+      case "time":
+        return `${hours}:${minutes}:${seconds}`;
+      case "date-time":
+      default:
+        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    }
   } catch (error) {
-    console.error('Error formatting date:', error);
-    return '-';
+    console.error("Error formatting date:", error);
+    return "-";
   }
 }
+

@@ -1,6 +1,7 @@
 "use client";
 import CustomDialog from "@/components/CustomDialog";
 import CustomSelect from "@/components/CustomSelect";
+import { DropdownComponent } from "@/components/form/DropdownComponent";
 import InputComponent from "@/components/form/InputComponent";
 import PageHeader from "@/components/PageHeader";
 import TableComponent from "@/components/TableComponent";
@@ -84,7 +85,7 @@ function ProjectPage() {
     <div className="flex flex-col w-full h-full gap-6">
       <PageHeader title="Projects" actions={headerActions} />
       <TableComponent
-        getPath="/projects"
+        dataPath="/projects"
         revalidate={refresh}
         columns={columns}
         emptyMessage="No Projects Found. Add A Project to View Them Here"
@@ -111,8 +112,7 @@ function ProjectPage() {
             }
             error={errors.name}
           />
-          <CustomSelect
-            title="Companies"
+          <DropdownComponent
             label="Select Project"
             className="w-full"
             placeholder="Click to Select Company"

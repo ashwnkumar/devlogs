@@ -39,3 +39,23 @@ export type TaskTypeType = {
   created_at: string;
   updated_at: string;
 };
+
+
+export type TaskType = {
+  id: string;
+  user_id: string;
+  project_id: string;
+  task_type: string;
+
+  title: string;
+
+  start_time: string; // ISO datetime
+  end_time: string | null;
+  duration_minutes: number | null;
+
+  is_running: boolean;
+  is_overtime: boolean;
+
+  created_at: string; // ISO datetime
+  updated_at: string; // ISO datetime
+};

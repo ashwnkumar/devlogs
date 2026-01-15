@@ -7,10 +7,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton"; // ← Add this import
+import { Skeleton } from "@/components/ui/skeleton";
 import { TableActions, TableColumn } from "@/types";
 import { Ban, EllipsisVertical } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -29,208 +29,276 @@ import {
 } from "./ui/table";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { DropdownComponent } from "./form/DropdownComponent";
+import InputComponent from "./form/InputComponent";
+
+// ── Simple useDebounce hook (you can also extract it to hooks/useDebounce.ts)
+function useDebounce<T>(value: T, delayMs: number = 450): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delayMs);
+
+    return () => clearTimeout(timer);
+  }, [value, delayMs]);
+
+  return debouncedValue;
+}
 
 type TableComponentProps<T extends object> = {
-  data? : T[];
+  data?: T[];
   columns: TableColumn<T>[];
   actions?: TableActions[];
   viewPath?: string;
-  emptyMessage?: string
-  getPath?: string
-  revalidate?: number | string
+  emptyMessage?: string;
+  dataPath?: string;
+  revalidate?: number | string;
+  filterConfig: {
+    data: any[];
+    label: string;
+    labelKey: string;
+    valueKey: string;
+    searchPlaceholder: string;
+  };
 };
 
 function TableComponent<T extends object>({
-  data,
+  filterConfig,
+  data: initialData,
   columns,
   actions = [],
   viewPath,
   emptyMessage,
-  getPath,
-  revalidate
+  dataPath,
+  revalidate,
 }: TableComponentProps<T>) {
   const router = useRouter();
-  const [view, setView] = useState<boolean>(false);
+  const [view, setView] = useState(false);
   const [selected, setSelected] = useState<T>({} as T);
-  const [tableData, setTableData] = useState<[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const [tableData, setTableData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [filter, setFilter] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+
+  // ← This is the debounced value we actually use for fetching
+  const debouncedSearch = useDebounce(search, 500);
+
+  const showControls =
+    (!!filterConfig?.data?.length && !!filterConfig.valueKey) ||
+    tableData.length > 0;
 
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api${getPath}`);
+    if (!dataPath) return;
 
+    setLoading(true);
+    let url = dataPath;
+
+    // Only add params if they have meaningful values
+    const params = new URLSearchParams();
+    if (filter) params.set("f", filter);
+    if (debouncedSearch) params.set("q", debouncedSearch);
+
+    if (params.size > 0) {
+      url += `?${params.toString()}`;
+    }
+
+    try {
+      const response = await fetch(`/api${url}`);
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to fetch data");
       }
 
-      const data = await response.json();
-      setTableData(data.data || data || []);
+      const result = await response.json();
+      setTableData(result.data || result || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to fetch data");
+      console.error("Fetch error:", error);
+      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
+  // Refetch when these change
   useEffect(() => {
-    fetchData()
-  }, [revalidate])
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revalidate, filter, debouncedSearch, dataPath]);
 
   const handleRowClick = (row: T) => {
     if (viewPath) {
       router.push(`/${viewPath}/${(row as any).id}`);
     } else {
-      handleViewDetails(row);
+      setSelected(row);
+      setView(true);
     }
   };
 
-  const handleViewDetails = (row: T) => {
-    setView(true);
-    setSelected(row);
-  };
-
-  // Loading state
-  if (loading) {
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>#</TableHead>
-            {columns.map((col, colIdx) => (
-              <TableHead key={String(col.key) || colIdx}>{col.label}</TableHead>
-            ))}
-            {actions.length > 0 && <TableHead>Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {[...Array(8)].map(
-            (
-              _,
-              i // Show 8 skeleton rows (adjust as needed)
-            ) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <Skeleton className="aspect-square rounded-full w-8" />
-                </TableCell>
-                {columns.map((col, colIdx) => (
-                  <TableCell key={String(col.key) || colIdx}>
-                    <Skeleton className="h-4 w-full max-w-[200px]" />
-                  </TableCell>
-                ))}
-                {actions.length > 0 && (
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                  </TableCell>
-                )}
-              </TableRow>
-            )
-          )}
-        </TableBody>
-      </Table>
-    );
-  }
-
-  // Empty state
-  if (tableData.length === 0) {
-    return (
-      <Empty className="w-full h-full bg-linear-to-b from-muted to-background">
-        <EmptyHeader>
-          <EmptyMedia variant={"icon"}>
-            <Ban />
-          </EmptyMedia>
-          <EmptyTitle>No Data Found</EmptyTitle>
-          {emptyMessage && <EmptyDescription>{emptyMessage}</EmptyDescription>}
-        </EmptyHeader>
-      </Empty>
-    );
-  }
-
-  // Normal table
   return (
-    <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>#</TableHead>
-            {columns.map((col, colIdx) => (
-              <TableHead key={String(col.key) || colIdx}>{col.label}</TableHead>
-            ))}
-            {actions.length > 0 && <TableHead>Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tableData.map((row, rowIdx) => (
-            <TableRow
-              onClick={() => handleRowClick(row)}
-              key={rowIdx}
-              className="cursor-pointer"
-            >
-              <TableCell>{rowIdx + 1}</TableCell>
-              {columns.map((col) => (
-                <TableCell key={String(col.key)}>
-                  {col.render ? col.render(row) : (row as any)[col.key]}
-                </TableCell>
-              ))}
-              {actions.length > 0 && (
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant={"outline"} size={"icon"}>
-                        <EllipsisVertical />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-40" align="end">
-                      {actions.map((action, actionIdx) => (
-                        <DropdownMenuItem key={actionIdx} asChild>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onClick={() => action.onClick(row)}
-                          >
-                            {action.icon && (
-                              <action.icon className="mr-2 h-4 w-4" />
-                            )}
-                            {action.label}
-                          </Button>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      <Sheet open={view} onOpenChange={setView}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle asChild>
-              <h3 className="text-2xl">Details</h3>
-            </SheetTitle>
-          </SheetHeader>
-          <div className="w-full h-full flex flex-col items-center justify-start p-4 gap-4">
-            {columns.map((col) => (
-              <div
-                key={String(col.key)}
-                className="flex items-start flex-col w-full"
-              >
-                <p className="font-medium text-sm">{col.label}:</p>
-                <p className="text-lg font-light">
-                  {col.render
-                    ? col.render(selected as T)
-                    : (selected as any)[col.key]}
-                </p>
-              </div>
-            ))}
+    <div className="space-y-4">
+      {showControls && (
+        <div className="w-full flex items-center justify-between mb-4">
+          <InputComponent
+            className="w-1/3"
+            label={filterConfig.searchPlaceholder}
+            placeholder={filterConfig.searchPlaceholder}
+            value={search}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              setSearch(e.target.value)
+            }
+          />
+          <div className="flex items-end gap-2">
+            <DropdownComponent
+              options={filterConfig.data}
+              label={filterConfig.label}
+              labelKey={filterConfig.labelKey}
+              valueKey={filterConfig.valueKey}
+              value={filter}
+              onValueChange={setFilter}
+              placeholder={filterConfig.label}
+              className="w-64 min-w-[180px]"
+            />
+            {filter && (
+              <Button variant="destructive" onClick={() => setFilter("")}>
+                Clear filter
+              </Button>
+            )}
           </div>
-        </SheetContent>
-      </Sheet>
-    </>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                {columns.map((col, i) => (
+                  <TableHead key={String(col.key) || i}>{col.label}</TableHead>
+                ))}
+                {actions.length > 0 && <TableHead>Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                  </TableCell>
+                  {columns.map((_, colIdx) => (
+                    <TableCell key={colIdx}>
+                      <Skeleton className="h-4 w-full max-w-[240px]" />
+                    </TableCell>
+                  ))}
+                  {actions.length > 0 && (
+                    <TableCell>
+                      <Skeleton className="h-8 w-8" />
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : tableData.length === 0 ? (
+        <div className="space-y-6">
+          <Empty className="min-h-[400px] bg-linear-to-b from-muted/50 to-background">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <Ban className="h-12 w-12 text-muted-foreground" />
+              </EmptyMedia>
+              <EmptyTitle>No Data Found</EmptyTitle>
+              {emptyMessage && (
+                <EmptyDescription>{emptyMessage}</EmptyDescription>
+              )}
+            </EmptyHeader>
+          </Empty>
+        </div>
+      ) : (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                {columns.map((col, i) => (
+                  <TableHead key={String(col.key) || i}>{col.label}</TableHead>
+                ))}
+                {actions.length > 0 && <TableHead>Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tableData.map((row, rowIdx) => (
+                <TableRow
+                  key={rowIdx}
+                  className="cursor-pointer hover:bg-muted/60 transition-colors"
+                  onClick={() => handleRowClick(row)}
+                >
+                  <TableCell>{rowIdx + 1}</TableCell>
+                  {columns.map((col) => (
+                    <TableCell key={String(col.key)}>
+                      {col.render
+                        ? col.render(row)
+                        : (row as any)[col.key as string]}
+                    </TableCell>
+                  ))}
+                  {actions.length > 0 && (
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <EllipsisVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {actions.map((action, idx) => (
+                            <DropdownMenuItem key={idx} asChild>
+                              <button
+                                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm"
+                                onClick={() => action.onClick?.(row)}
+                              >
+                                {action.icon && (
+                                  <action.icon className="h-4 w-4" />
+                                )}
+                                {action.label}
+                              </button>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <Sheet open={view} onOpenChange={setView}>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Details</SheetTitle>
+              </SheetHeader>
+              <div className="py-6 space-y-6">
+                {columns.map((col) => (
+                  <div key={String(col.key)} className="space-y-1">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {col.label}
+                    </div>
+                    <div className="text-base">
+                      {col.render
+                        ? col.render(selected)
+                        : (selected as any)[col.key as string]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </>
+      )}
+    </div>
   );
 }
 
