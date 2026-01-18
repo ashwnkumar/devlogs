@@ -43,3 +43,59 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+
+    // Sanitize timestamp fields - convert empty strings to null
+    const sanitizedBody = { ...body };
+    const timestampFields = ["joined_at", "left_at"];
+    timestampFields.forEach((field) => {
+      if (sanitizedBody[field] === "") {
+        sanitizedBody[field] = null;
+      }
+    });
+
+    // Add user_id to the data
+    const companyData = {
+      ...sanitizedBody,
+      user_id: user.id,
+    };
+
+    const { data, error } = await supabase
+      .from("companies")
+      .insert(companyData)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: `Failed to create company: ${error.message}` },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data,
+      message: "Company created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating company:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}

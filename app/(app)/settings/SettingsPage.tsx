@@ -6,9 +6,8 @@ import ProfileSettings from "./ProfileSettings";
 import AppearanceSettings from "./AppearanceSettings";
 
 const tabsData = [
-  { label: "General", key: "general" },
   { label: "Profile", key: "profile" },
-  { label: "Appearance", key: "appearance" },
+  { label: "General", key: "general" },
 ];
 
 function SettingsPage() {
@@ -23,8 +22,7 @@ function SettingsPage() {
         return <GeneralSettings />;
       case "profile":
         return <ProfileSettings />;
-      case "appearance":
-        return <AppearanceSettings />;
+
       default:
         return null;
     }

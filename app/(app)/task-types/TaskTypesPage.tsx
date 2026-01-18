@@ -73,12 +73,12 @@ function TaskTypesPage() {
         dataPath="/task-types"
         columns={columns}
         filterConfig={{
-          data: taskTypes,
-          label: "Filter By Task Type",
-          labelKey: "name",
-          valueKey: "id",
+         
           searchPlaceholder: "Search Task Types",
         }}
+        enableEdit={false}
+        enableDelete={false}
+        enableAdd={false}
       />
     </div>
   );

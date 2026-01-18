@@ -23,10 +23,14 @@ export async function POST(req: NextRequest) {
     )
       return NextResponse.json(
         { error: "Missing Required Fields" },
-        { status: 400 }
+        { status: 400 },
       );
 
-    const is_running = end_time === null;
+    // Sanitize timestamp fields - convert empty strings to null
+    const sanitizedStartTime = start_time === "" ? null : start_time;
+    const sanitizedEndTime = end_time === "" ? null : end_time;
+
+    const is_running = sanitizedEndTime === null;
 
     const { data, error } = await supabase
       .from("tasks")
@@ -35,8 +39,8 @@ export async function POST(req: NextRequest) {
         project_id: project,
         task_type,
         title,
-        start_time,
-        end_time,
+        start_time: sanitizedStartTime,
+        end_time: sanitizedEndTime,
         is_running,
         is_overtime,
       })
@@ -46,7 +50,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       return NextResponse.json(
         { error: `Failed to add task: ${error.message}` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -55,7 +59,7 @@ export async function POST(req: NextRequest) {
     console.error("Error Adding Log:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -75,10 +75,19 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Sanitize timestamp fields - convert empty strings to null
+    const sanitizedUpdates = { ...updates };
+    const timestampFields = ["last_active", "updated_at"];
+    timestampFields.forEach((field) => {
+      if (sanitizedUpdates[field] === "") {
+        sanitizedUpdates[field] = null;
+      }
+    });
+
     // Execute update query filtered by authenticated user's ID
     const { data, error } = await supabase
       .from("users")
-      .update(updates)
+      .update(sanitizedUpdates)
       .eq("id", user.id)
       .select()
       .single();

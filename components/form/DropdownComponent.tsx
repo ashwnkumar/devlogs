@@ -151,7 +151,7 @@ export function DropdownComponent<T extends BaseOption>({
 
         {/* Error icon overlay */}
         {hasError && (
-          <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive pointer-events-none" />
+          <AlertCircle className="absolute right-8 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive pointer-events-none" />
         )}
       </div>
 

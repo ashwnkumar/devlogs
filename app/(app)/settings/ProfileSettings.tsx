@@ -101,18 +101,12 @@ function ProfileSettings() {
           className="w-full"
           label="Timezone"
           name="timezone"
+          disabled
           placeholder="Timezone"
           value={formData?.timezone}
           onChange={handleInputChange}
         />
-        <InputComponent
-          className="w-full"
-          label="Username"
-          name="username"
-          placeholder="Username"
-          value={formData?.username}
-          onChange={handleInputChange}
-        />
+       
       </div>
     </div>
   );

@@ -25,7 +25,6 @@ function Sidebar() {
   const pathname = usePathname();
   const sidebarItems: SidebarItemProps[] = [
     { label: "Dashboard", route: "/", icon: LayoutDashboard },
-    { label: "Today", route: "/today", icon: Clock },
     { label: "This Week", route: "/this-week", icon: CalendarDays },
     { label: "All Logs", route: "/all-logs", icon: Logs },
     { label: "Companies", route: "/companies", icon: BriefcaseBusiness },
@@ -36,7 +35,7 @@ function Sidebar() {
 
   const isActive = (route: string) => {
     if (route === "/" && pathname === "/") return true;
-    if (route !== "/" && pathname.startsWith(route)) return true;
+    if (route !== "/" && pathname.includes(route)) return true;
     return false;
   };
 

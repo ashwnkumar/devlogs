@@ -26,6 +26,7 @@ type Props = {
     | "outline";
   onConfirm?: () => void;
   onCancel?: () => void;
+  loading?: boolean;
 };
 
 function ConfirmDialog({
@@ -38,6 +39,7 @@ function ConfirmDialog({
   confirmVariant = "default",
   onConfirm,
   onCancel,
+  loading = false,
 }: Props) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -49,9 +51,15 @@ function ConfirmDialog({
           )}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction variant={confirmVariant} onClick={onConfirm}>
-            {confirmText}
+          <AlertDialogCancel onClick={onCancel} disabled={loading}>
+            {cancelText}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            variant={confirmVariant}
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading ? "Processing..." : confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

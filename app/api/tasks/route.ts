@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       return NextResponse.json(
         { error: `Failed to fetch tasks: ${error.message}` },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -70,7 +70,59 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching tasks:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+
+    // Calculate is_running based on end_time
+    const is_running = body.end_time === null || body.end_time === undefined;
+
+    // Add user_id and is_running to the data
+    const taskData = {
+      ...body,
+      user_id: user.id,
+      is_running,
+      is_overtime: body.is_overtime ?? false,
+    };
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert(taskData)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: `Failed to create task: ${error.message}` },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data,
+      message: "Task created successfully",
+    });
+  } catch (error) {
+    console.error("Error creating task:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
