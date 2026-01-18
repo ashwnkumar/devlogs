@@ -5,7 +5,6 @@ import InputComponent from "@/components/form/InputComponent";
 import PageHeader from "@/components/PageHeader";
 import BulkUploadDialog from "@/components/BulkUploadDialog";
 import { useGlobal } from "@/context/GlobalContext";
-import { createClient } from "@/lib/supabase/client";
 import { CompanyType, ProjectType } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { Plus, Upload } from "lucide-react";
@@ -16,7 +15,8 @@ import TableComponent from "@/components/TableComponent";
 function CompanyDetailsPage() {
   const params = useParams();
   const companyId = params.id as string;
-  const { projects: allProjects, addProject } = useGlobal();
+  const { currentProjects: allProjects, handleAddProject: addProject } =
+    useGlobal();
 
   const [company, setCompany] = useState<CompanyType | null>(null);
   const [projects, setProjects] = useState<ProjectType[]>([]);
@@ -35,16 +35,21 @@ function CompanyDetailsPage() {
     if (!companyId) return;
 
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("companies")
-        .select("*")
-        .eq("id", companyId)
-        .single();
+      const response = await fetch(`/api/companies/${companyId}`);
 
-      if (error) {
-        setError(error.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+
+        // Handle specific error cases
+        if (response.status === 403) {
+          setError("You don't have permission to view this company");
+        } else if (response.status === 404) {
+          setError("Company not found");
+        } else {
+          setError(errorData.error || "Failed to fetch company data");
+        }
       } else {
+        const { data } = await response.json();
         setCompany(data);
       }
     } catch {
@@ -69,14 +74,10 @@ function CompanyDetailsPage() {
   }, [allProjects, companyId]);
 
   const handleAddProject = async () => {
-    if (!company?.id || !company?.user_id) return;
+    if (!company?.id) return;
 
     setAddingProject(true);
-    const success = await addProject(
-      newProjectName,
-      company.id,
-      company.user_id
-    );
+    const success = await addProject(newProjectName, company.id);
     setAddingProject(false);
 
     if (success) {
@@ -228,7 +229,17 @@ function CompanyDetailsPage() {
         />
 
         <div className="w-full ">
-          <TableComponent data={projects} columns={projectColumns} />
+          <TableComponent
+            data={projects}
+            columns={projectColumns}
+            filterConfig={{
+              data: projects,
+              label: "Filter By Projects",
+              labelKey: "name",
+              valueKey: "id",
+              searchPlaceholder: "Search Projects",
+            }}
+          />
         </div>
       </div>
 

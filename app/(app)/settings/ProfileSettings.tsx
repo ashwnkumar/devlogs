@@ -2,7 +2,6 @@
 import InputComponent from "@/components/form/InputComponent";
 import PageHeader from "@/components/PageHeader";
 import { useAuth } from "@/context/AuthContext";
-import { createClient } from "@/lib/supabase/client";
 import { UserType } from "@/types/user";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -37,18 +36,27 @@ function ProfileSettings() {
       return;
     }
 
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("users")
-      .update(formData)
-      .eq("id", user.id)
-      .select(); // Keep this if you want to know if a row was updated
+    try {
+      const response = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-    if (error) {
-      toast.error(`Error updating profile: ${error.message}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update profile");
+      }
+
+      const { data, message } = await response.json();
+      toast.success(message || "Profile updated successfully!");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error updating profile";
+      toast.error(errorMessage);
       console.error("Update error:", error);
-    } else {
-      toast.success("Profile updated successfully!");
     }
   };
 

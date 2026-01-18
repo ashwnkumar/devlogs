@@ -8,24 +8,24 @@ import PageHeader from "@/components/PageHeader";
 import TableComponent from "@/components/TableComponent";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { createClient } from "@/lib/supabase/client";
-import { CompanyType } from "@/types";
+import { useGlobal } from "@/context/GlobalContext";
+import { CompanyType, TableColumn } from "@/types";
 import { Edit, ExternalLink, Trash2 } from "lucide-react";
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { addCompany, updateCompany, deleteCompany } from "./actions";
 
 function CompaniesPage() {
   const [isPending, startTransition] = useTransition();
+  const { companies } = useGlobal();
 
-  const [loading, setLoading] = useState(false);
-  const [companies, setCompanies] = useState<CompanyType[]>([]);
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [refresh, setRefresh] = useState<number>(1);
 
   const isCurrentlyWorking = companies.some(
-    (company) => company.left_at === null
+    (company) => company.left_at === null,
   );
 
   const [formData, setFormData] = useState({
@@ -35,30 +35,6 @@ function CompaniesPage() {
     left_at: null as Date | null,
     is_current: false,
   });
-
-  const fetchCompanies = async () => {
-    setLoading(true); // Add this line
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("companies")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Failed to load companies");
-      console.error(error);
-    } else {
-      setCompanies(data || []);
-    }
-    setLoading(false); // Add this line
-  };
-
-  useEffect(() => {
-    const loadCompanies = async () => {
-      await fetchCompanies();
-    };
-    loadCompanies();
-  }, []);
 
   const handleCloseDialog = () => {
     setOpen(false);
@@ -93,11 +69,11 @@ function CompaniesPage() {
           : await addCompany(formDataObj);
 
         toast.success(result.message);
-        await fetchCompanies();
+        setRefresh((prev) => prev + 1);
         handleCloseDialog();
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "An error occurred"
+          error instanceof Error ? error.message : "An error occurred",
         );
       }
     });
@@ -113,12 +89,12 @@ function CompaniesPage() {
       try {
         const result = await deleteCompany(formData);
         toast.success(result.message);
-        await fetchCompanies();
+        setRefresh((prev) => prev + 1);
         setConfirm(false);
         setSelectedId(null);
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "An error occurred"
+          error instanceof Error ? error.message : "An error occurred",
         );
       }
     });
@@ -139,7 +115,7 @@ function CompaniesPage() {
   const handleAddCompany = () => {
     if (isCurrentlyWorking) {
       toast.info(
-        "You are currently working at a company. Please leave your current company first."
+        "You are currently working at a company. Please leave your current company first.",
       );
       return;
     }
@@ -155,16 +131,14 @@ function CompaniesPage() {
     setOpen(true);
   };
 
-  const columns = [
+  const columns: TableColumn<CompanyType>[] = [
     {
       label: "Name",
       key: "name",
       render: (row: CompanyType) => (
         <div className="flex items-center gap-2 ">
           <span>{row.name}</span>
-          <span className="">
-            <ExternalLink size={16} />
-          </span>
+
           {row.left_at === null && (
             <span className="">
               <Badge>Current</Badge>
@@ -205,8 +179,9 @@ function CompaniesPage() {
         actions={[{ label: "Add Company", onClick: handleAddCompany }]}
       />
 
-      <TableComponent
-        data={companies}
+      <TableComponent<CompanyType>
+        dataPath="/companies"
+        revalidate={refresh}
         columns={columns}
         actions={[
           { label: "Edit", icon: Edit, onClick: handleEditRow },
@@ -219,8 +194,13 @@ function CompaniesPage() {
             },
           },
         ]}
-        viewPath="companies"
-        loading={loading}
+        filterConfig={{
+          data: companies,
+          label: "Filter By Companies",
+          labelKey: "name",
+          valueKey: "id",
+          searchPlaceholder: "Search Companies",
+        }}
       />
 
       <CustomDialog
@@ -230,7 +210,7 @@ function CompaniesPage() {
         onCancel={handleCloseDialog}
         onConfirm={() => {
           const form = document.getElementById(
-            "company-form"
+            "company-form",
           ) as HTMLFormElement;
           if (form) {
             const formData = new FormData(form);

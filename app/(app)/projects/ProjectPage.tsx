@@ -1,6 +1,5 @@
 "use client";
 import CustomDialog from "@/components/CustomDialog";
-import CustomSelect from "@/components/CustomSelect";
 import { DropdownComponent } from "@/components/form/DropdownComponent";
 import InputComponent from "@/components/form/InputComponent";
 import PageHeader from "@/components/PageHeader";
@@ -8,7 +7,7 @@ import TableComponent from "@/components/TableComponent";
 import { useAuth } from "@/context/AuthContext";
 import { useGlobal } from "@/context/GlobalContext";
 import { formatDate } from "@/lib/utils";
-import { CompanyType, ProjectType } from "@/types";
+import { CompanyType, ProjectType, TableColumn } from "@/types";
 import React, { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
 
@@ -26,7 +25,7 @@ function ProjectPage() {
     company_id: user?.current_company ? String(user.current_company) : "",
   });
   const [errors, setErrors] = useState<{ name?: string; company_id?: string }>(
-    {}
+    {},
   );
 
   const reset = () => {
@@ -59,7 +58,7 @@ function ProjectPage() {
     return company?.name || "NA";
   };
 
-  const columns = [
+  const columns: TableColumn<ProjectType>[] = [
     { label: "Name", key: "name" },
     {
       label: "Company",
@@ -84,11 +83,18 @@ function ProjectPage() {
   return (
     <div className="flex flex-col w-full h-full gap-6">
       <PageHeader title="Projects" actions={headerActions} />
-      <TableComponent
+      <TableComponent<ProjectType>
         dataPath="/projects"
         revalidate={refresh}
         columns={columns}
         emptyMessage="No Projects Found. Add A Project to View Them Here"
+        filterConfig={{
+          data: companies,
+          label: "Filter By Company",
+          labelKey: "name",
+          valueKey: "id",
+          searchPlaceholder: "Search Projects",
+        }}
       />
       <CustomDialog
         open={open}

@@ -26,7 +26,7 @@ type FormType = {
 function AddLogDialog({ open, onOpenChange, onAddComplete }: Props) {
   const { user } = useAuth();
   const { taskTypes, globalLoading, setGlobalLoading } = useGlobal();
-  const [projects, setProjects] = useState<ProjectType | []>([]);
+  const [projects, setProjects] = useState<ProjectType[]>([]);
   const [formData, setFormData] = useState<FormType>({
     project: "",
     task_type: "",
@@ -36,7 +36,7 @@ function AddLogDialog({ open, onOpenChange, onAddComplete }: Props) {
     is_overtime: false,
   });
 
-  console.log('formData', formData)
+  console.log("formData", formData);
 
   const handleAddLog = async () => {
     // basic validation
@@ -44,7 +44,7 @@ function AddLogDialog({ open, onOpenChange, onAddComplete }: Props) {
       !formData.project ||
       !formData.task_type ||
       !formData.title ||
-      !formData.start_time 
+      !formData.start_time
     ) {
       toast.error("Please fill in all required fields");
       return;
@@ -76,17 +76,16 @@ function AddLogDialog({ open, onOpenChange, onAddComplete }: Props) {
 
       toast.success("Log added successfully");
       reset();
-      onAddComplete?.(); 
+      onAddComplete?.();
     } catch (error) {
       console.error("Internal Server Error", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to add task"
+        error instanceof Error ? error.message : "Failed to add task",
       );
     } finally {
       setGlobalLoading(false);
     }
   };
-
 
   const reset = () => {
     setFormData({
@@ -133,7 +132,7 @@ function AddLogDialog({ open, onOpenChange, onAddComplete }: Props) {
   const fetchProjects = async () => {
     try {
       const res = await fetch(
-        `/api/projects?company_id=${user?.current_company}`
+        `/api/projects?company_id=${user?.current_company}`,
       );
 
       if (res.ok) {
@@ -142,7 +141,9 @@ function AddLogDialog({ open, onOpenChange, onAddComplete }: Props) {
       }
     } catch (error) {
       console.error("Error Fetching Posts", error);
-      toast.error(`Something Went Wrong: ${error.error || error}`);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Something Went Wrong: ${errorMessage}`);
     }
   };
 
@@ -216,7 +217,7 @@ function AddLogDialog({ open, onOpenChange, onAddComplete }: Props) {
           name="end_time"
         />
         <SelectComponent
-        id="is_overtime"
+          id="is_overtime"
           label="Is Overtime?"
           className="col-span-2"
           checked={formData.is_overtime}

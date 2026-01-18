@@ -44,7 +44,7 @@ export function DatePicker({
         {label}
         {required && <span className="text-destructive">*</span>}
       </Label>
-      <Popover  open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger disabled={disabled} asChild>
           <Button
             variant="outline"
@@ -69,9 +69,8 @@ export function DatePicker({
         </PopoverTrigger>
         <PopoverContent className="w-full overflow-hidden p-0" align="start">
           <Calendar
-         
             mode="single"
-            selected={value}
+            selected={value ?? undefined}
             captionLayout="dropdown"
             onSelect={(date) => {
               handleDateChange(date);

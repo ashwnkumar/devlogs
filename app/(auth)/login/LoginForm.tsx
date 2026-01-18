@@ -28,7 +28,7 @@ export function LoginForm({
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const validateForm = () => {
-    const err = {};
+    const err: { email?: string; password?: string } = {};
 
     if (!formData.email) {
       err.email = "Email is required";
@@ -56,10 +56,15 @@ export function LoginForm({
     if (!validateForm()) {
       return toast.error("Please fill all required fields");
     }
+    if (!login) {
+      return toast.error("Login function not available");
+    }
     setLoading(true);
     const res = await login(formData.email, formData.password);
     if (!res.success) {
-      toast.error(res.message || "Login failed");
+      const errorMessage =
+        res.error instanceof Error ? res.error.message : "Login failed";
+      toast.error(errorMessage);
       setLoading(false);
     } else {
       setLoading(false);

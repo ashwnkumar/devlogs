@@ -58,7 +58,7 @@ function ImportDataPage() {
 
   const handleChangeFile = () => {
     const fileInput = document.getElementById(
-      "excel-file-upload"
+      "excel-file-upload",
     ) as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
@@ -85,7 +85,7 @@ function ImportDataPage() {
     }
   };
 
-  const fields = [
+  const fields: { label: string; key: keyof FormType }[] = [
     { label: "Date", key: "date" },
     { label: "Project", key: "project" },
     { label: "Task Type", key: "task_type" },
@@ -110,10 +110,10 @@ function ImportDataPage() {
             />
 
             <label htmlFor="excel-file-upload" className="cursor-pointer">
-              {formData.upload ? (
+              {file ? (
                 <div className="space-y-4">
                   <div className="text-green-700 font-medium">
-                    File selected: {formData.upload.name}
+                    File selected: {file.name}
                   </div>
                   <div className="flex gap-2 justify-center">
                     <Button

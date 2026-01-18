@@ -22,6 +22,9 @@ function ProfileDropdown() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleLogout = async () => {
+    if (!logout) {
+      return toast.error("Logout function not available");
+    }
     setLoading(true);
     const res = await logout();
     if (res.success) {
@@ -30,7 +33,9 @@ function ProfileDropdown() {
       redirect("/login");
     } else {
       setLoading(false);
-      toast.error(res.error?.message || "Logout failed");
+      const errorMessage =
+        res.error instanceof Error ? res.error.message : "Logout failed";
+      toast.error(errorMessage);
     }
   };
 

@@ -8,7 +8,6 @@ import {
   useState,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 type GlobalContextType = {
@@ -28,24 +27,24 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [companies, setCompanies] = useState<CompanyType[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskTypeType[]>([]);
-  const [currentProjects, setCurrentProjects] = useState<ProjectType>([]);
+  const [currentProjects, setCurrentProjects] = useState<ProjectType[]>([]);
   const [globalLoading, setGlobalLoading] = useState(false);
 
   const fetchCompanies = useCallback(async () => {
     if (!user) return;
     setGlobalLoading(true);
     try {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from("companies")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .eq("user_id", user.id);
-      if (error) {
-        console.error("Error fetching companies:", error);
-      } else {
-        setCompanies(data || []);
+      const response = await fetch("/api/companies");
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch companies");
       }
+
+      const { data } = await response.json();
+      setCompanies(data || []);
+    } catch (error) {
+      console.error("Error fetching companies:", error);
     } finally {
       setGlobalLoading(false);
     }
@@ -54,7 +53,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const fetchCurrentProjects = async () => {
     try {
       const response = await fetch(
-        `/api/projects?company_id=${user?.current_company}`
+        `/api/projects?company_id=${user?.current_company}`,
       );
 
       if (!response.ok) {
@@ -71,7 +70,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
 
   const handleAddProject = async (
     name: string,
-    companyId: string
+    companyId: string,
   ): Promise<boolean> => {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -101,7 +100,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to add project"
+        error instanceof Error ? error.message : "Failed to add project",
       );
       return false;
     } finally {
@@ -126,7 +125,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
       return true;
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Failed to delete project"
+        error instanceof Error ? error.message : "Failed to delete project",
       );
       console.error(error);
       return false;
@@ -138,18 +137,17 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const fetchTaskTypes = useCallback(async () => {
     setGlobalLoading(true);
     try {
-      const supabase = await createClient();
-      const { data, error } = await supabase
-        .from("task_types")
-        .select("*")
-        .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
+      const response = await fetch("/api/task-types");
 
-      if (error) {
-        console.error("Error fetching task types:", error);
-      } else {
-        setTaskTypes(data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch task types");
       }
+
+      const { data } = await response.json();
+      setTaskTypes(data || []);
+    } catch (error) {
+      console.error("Error fetching task types:", error);
     } finally {
       setGlobalLoading(false);
     }

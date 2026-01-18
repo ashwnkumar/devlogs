@@ -27,12 +27,11 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { DropdownComponent } from "./form/DropdownComponent";
 import InputComponent from "./form/InputComponent";
 
-// ── Simple useDebounce hook (you can also extract it to hooks/useDebounce.ts)
+// ── Simple useDebounce hook
 function useDebounce<T>(value: T, delayMs: number = 450): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -51,7 +50,6 @@ type TableComponentProps<T extends object> = {
   data?: T[];
   columns: TableColumn<T>[];
   actions?: TableActions[];
-  viewPath?: string;
   emptyMessage?: string;
   dataPath?: string;
   revalidate?: number | string;
@@ -69,12 +67,10 @@ function TableComponent<T extends object>({
   data: initialData,
   columns,
   actions = [],
-  viewPath,
   emptyMessage,
   dataPath,
   revalidate,
 }: TableComponentProps<T>) {
-  const router = useRouter();
   const [view, setView] = useState(false);
   const [selected, setSelected] = useState<T>({} as T);
   const [tableData, setTableData] = useState<T[]>([]);
@@ -83,7 +79,6 @@ function TableComponent<T extends object>({
   const [filter, setFilter] = useState<string>("");
   const [search, setSearch] = useState<string>("");
 
-  // ← This is the debounced value we actually use for fetching
   const debouncedSearch = useDebounce(search, 500);
 
   const showControls =
@@ -96,7 +91,6 @@ function TableComponent<T extends object>({
     setLoading(true);
     let url = dataPath;
 
-    // Only add params if they have meaningful values
     const params = new URLSearchParams();
     if (filter) params.set("f", filter);
     if (debouncedSearch) params.set("q", debouncedSearch);
@@ -122,23 +116,18 @@ function TableComponent<T extends object>({
     }
   };
 
-  // Refetch when these change
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revalidate, filter, debouncedSearch, dataPath]);
 
   const handleRowClick = (row: T) => {
-    if (viewPath) {
-      router.push(`/${viewPath}/${(row as any).id}`);
-    } else {
-      setSelected(row);
-      setView(true);
-    }
+    setSelected(row);
+    setView(true);
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       {showControls && (
         <div className="w-full flex items-center justify-between mb-4">
           <InputComponent
@@ -171,52 +160,43 @@ function TableComponent<T extends object>({
       )}
 
       {loading ? (
-        <div className="space-y-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                {columns.map((col, i) => (
-                  <TableHead key={String(col.key) || i}>{col.label}</TableHead>
-                ))}
-                {actions.length > 0 && <TableHead>Actions</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                  </TableCell>
-                  {columns.map((_, colIdx) => (
-                    <TableCell key={colIdx}>
-                      <Skeleton className="h-4 w-full max-w-[240px]" />
-                    </TableCell>
-                  ))}
-                  {actions.length > 0 && (
-                    <TableCell>
-                      <Skeleton className="h-8 w-8" />
-                    </TableCell>
-                  )}
-                </TableRow>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              {columns.map((col, i) => (
+                <TableHead key={String(col.key) || i}>{col.label}</TableHead>
               ))}
-            </TableBody>
-          </Table>
-        </div>
+              {actions.length > 0 && <TableHead>Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </TableCell>
+                {columns.map((_, colIdx) => (
+                  <TableCell key={colIdx}>
+                    <Skeleton className="h-4 w-full max-w-[240px]" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       ) : tableData.length === 0 ? (
-        <div className="space-y-6">
-          <Empty className="min-h-[400px] bg-linear-to-b from-muted/50 to-background">
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <Ban className="h-12 w-12 text-muted-foreground" />
-              </EmptyMedia>
-              <EmptyTitle>No Data Found</EmptyTitle>
-              {emptyMessage && (
-                <EmptyDescription>{emptyMessage}</EmptyDescription>
-              )}
-            </EmptyHeader>
-          </Empty>
-        </div>
+        <Empty className="min-h-[400px] bg-linear-to-b from-muted/50 to-background">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Ban className="h-12 w-12 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyTitle>No Data Found</EmptyTitle>
+            {emptyMessage && (
+              <EmptyDescription>{emptyMessage}</EmptyDescription>
+            )}
+          </EmptyHeader>
+        </Empty>
       ) : (
         <>
           <Table>
@@ -280,7 +260,7 @@ function TableComponent<T extends object>({
               <SheetHeader>
                 <SheetTitle>Details</SheetTitle>
               </SheetHeader>
-              <div className="py-6 space-y-6">
+              <div className="p-6 space-y-6">
                 {columns.map((col) => (
                   <div key={String(col.key)} className="space-y-1">
                     <div className="text-sm font-medium text-muted-foreground">

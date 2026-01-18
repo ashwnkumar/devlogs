@@ -9,31 +9,36 @@ type AuthContextType = {
   setSession?: (session: Session | null) => void;
   login?: (
     email: string,
-    password: string
+    password: string,
   ) => Promise<{
     success: boolean;
     data?: unknown;
     error?: unknown;
   }>;
-  logout?: () => void;
+  logout?: () => Promise<{
+    success: boolean;
+    error?: unknown;
+  }>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
 
-  const fetchUserDetails = async (id: string) => {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (error) {
-      console.error("Error fetching user details:", error);
-    } else {
+  const fetchUserDetails = async () => {
+    try {
+      const response = await fetch("/api/users/profile");
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch user details");
+      }
+
+      const { data } = await response.json();
       setUser(data);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
     }
   };
 
@@ -77,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const supabase = await createClient();
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          fetchUserDetails(session.user.id);
+          fetchUserDetails();
         }
       });
     };
@@ -86,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const supabase = await createClient();
       supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
-          fetchUserDetails(session.user.id);
+          fetchUserDetails();
         }
       });
     };
