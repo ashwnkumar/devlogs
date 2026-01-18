@@ -14,7 +14,7 @@ function SettingsPage() {
   const params = useSearchParams();
   const tab = params.get("tab");
 
-  const activeTab = tabsData.find((t) => t.key === tab)?.key ?? "general";
+  const activeTab = tabsData.find((t) => t.key === tab)?.key ?? "profile";
 
   const renderSettings = () => {
     switch (activeTab) {

@@ -1,6 +1,6 @@
 "use client";
 import { createClient } from "@/lib/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
+import { Session } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
 import type { UserType } from "@/types";
 
@@ -14,6 +14,15 @@ type AuthContextType = {
     success: boolean;
     data?: unknown;
     error?: unknown;
+  }>;
+  register?: (
+    email: string,
+    password: string,
+  ) => Promise<{
+    success: boolean;
+    data?: unknown;
+    error?: unknown;
+    needsEmailConfirmation?: boolean;
   }>;
   logout?: () => Promise<{
     success: boolean;
@@ -61,6 +70,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const register = async (email: string, password: string) => {
+    const supabase = await createClient();
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("Registration error:", error);
+        return { success: false, error };
+      }
+
+      // Check if email confirmation is required
+      const needsEmailConfirmation =
+        data.user && !data.session ? true : undefined;
+
+      return {
+        success: true,
+        data,
+        needsEmailConfirmation,
+      };
+    } catch (error) {
+      console.error("Something Went Wrong:", error);
+      return { success: false, error };
+    }
+  };
+
   const logout = async () => {
     try {
       const supabase = await createClient();
@@ -100,7 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ login, logout, user }}>
+    <AuthContext.Provider value={{ login, register, logout, user }}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,7 +8,7 @@ function Navbar() {
   return (
     <div className="w-full sticky top-0 shadow flex items-center justify-between bg-background z-50 px-4 py-2">
       <h1 className="flex items-center gap-2">
-        <div className="bg-foreground text-background flex items-center p-1 rounded">
+        <div className="bg-primary text-white flex items-center p-1 rounded">
           <Code2 />
         </div>
         <span>DevLogs</span>

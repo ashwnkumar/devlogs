@@ -30,7 +30,7 @@ function Sidebar() {
     { label: "Companies", route: "/companies", icon: BriefcaseBusiness },
     { label: "Projects", route: "/projects", icon: FolderOpen },
     { label: "Task Types", route: "/task-types", icon: CheckCircle },
-    { label: "Settings", route: "/settings?tab=general", icon: Settings },
+    { label: "Settings", route: "/settings?tab=profile", icon: Settings },
   ];
 
   const isActive = (route: string) => {

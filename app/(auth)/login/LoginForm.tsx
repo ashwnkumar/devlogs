@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -21,8 +22,8 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    email: "code.by.ashwin@gmail.com",
-    password: "devlogs1272!",
+    email: "",
+    password: "",
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -113,6 +114,12 @@ export function LoginForm({
               {loading ? "Logging in..." : "Login"}
             </Button>
           </form>
+          <div className="mt-4 text-center text-sm">
+            Don&apos; have an account?{" "}
+            <Link href="/register" className="underline text-primary">
+              Create One
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
