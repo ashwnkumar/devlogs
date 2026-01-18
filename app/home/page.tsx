@@ -2,6 +2,26 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Code2 } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
+import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "DevLogs - Developer Work Logging & Productivity Tracking Platform",
+  description:
+    "DevLogs is a modern work logging and journaling platform built for software engineers. Track daily tasks, time spent, and productivity evolution across projects with intuitive dashboards and analytics. Start logging free today.",
+  openGraph: {
+    title: "DevLogs - Track What Actually Matters. Understand How You Grow.",
+    description:
+      "Log daily work with intention, classify tasks, track time meaningfully, and uncover long-term productivity patterns through beautiful dashboards.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "DevLogs - Track What Actually Matters. Understand How You Grow.",
+    description:
+      "Log daily work with intention, classify tasks, track time meaningfully, and uncover long-term productivity patterns.",
+  },
+};
 
 export default function Home() {
   return (
@@ -89,7 +109,13 @@ export default function Home() {
               {/* Placeholder for dashboard mockup image */}
               <div className="aspect-video rounded-lg bg-muted/40 flex items-center justify-center text-muted-foreground text-lg font-medium">
                 {/* In real app: <Image src="/dashboard-mockup.png" alt="DevLog Dashboard" fill className="object-cover" /> */}
-                Clean analytics dashboard preview (dark mode friendly)
+                {/* Clean analytics dashboard preview (dark mode friendly) */}
+                <Image
+                  src="/test2.jpg"
+                  alt="DevLog Dashboard"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
           </div>
@@ -131,9 +157,8 @@ export default function Home() {
                 Developer-First Experience
               </h3>
               <p className="text-muted-foreground">
-                Fast, keyboard-friendly UI. Built with
-                Next.js, Supabase, Tailwind + shadcn/ui — feels like home
-                for engineers.
+                Fast, keyboard-friendly UI. Built with Next.js, Supabase,
+                Tailwind + shadcn/ui — feels like home for engineers.
               </p>
             </div>
           </div>

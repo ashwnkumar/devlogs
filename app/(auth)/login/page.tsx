@@ -1,6 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm } from "./LoginForm";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Login",
+  description:
+    "Sign in to DevLogs to access your work logs, track productivity, and manage your development tasks across projects.",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default async function Page() {
   const supabase = await createClient();

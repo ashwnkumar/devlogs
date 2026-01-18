@@ -1,6 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { RegisterForm } from "./RegisterForm";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Register",
+  description:
+    "Create your DevLogs account and start tracking your development work, productivity patterns, and career growth with our developer-first journaling platform.",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default async function Page() {
   const supabase = await createClient();

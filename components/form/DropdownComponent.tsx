@@ -27,7 +27,7 @@ export interface DropdownComponentProps<T extends BaseOption> {
   label?: string;
   required?: boolean;
   error?: string;
-  options: T[];
+  options: T[] | undefined;
   labelKey?: keyof T;
   valueKey?: keyof T;
   value?: string | number | null;
@@ -58,7 +58,7 @@ export function DropdownComponent<T extends BaseOption>({
   // Normalize value to string (handles number | string | null)
   const selectedValue = value != null ? String(value) : "";
 
-  const selectedOption = options.find(
+  const selectedOption = options?.find(
     (opt) => String(opt[valueKey]) === selectedValue
   );
 
@@ -100,7 +100,7 @@ export function DropdownComponent<T extends BaseOption>({
               <CommandList>
                 <CommandEmpty>No option found.</CommandEmpty>
                 <CommandGroup>
-                  {options.map((option) => {
+                  {options?.map((option) => {
                     const optValue = String(option[valueKey]);
                     const optLabel = String(option[labelKey]);
 

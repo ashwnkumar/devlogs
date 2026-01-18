@@ -32,7 +32,7 @@ export default async function AppLayout({
   const session = await supabase.auth.getSession();
 
   if (!session?.data?.session) {
-    redirect("/login");
+    redirect("/home");
   }
 
   return (
