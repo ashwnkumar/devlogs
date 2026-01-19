@@ -1,13 +1,11 @@
 // app/not-found.tsx
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Code2, Terminal } from "lucide-react";
+import { ArrowLeft, Terminal } from "lucide-react";
 import Link from "next/link";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)] flex flex-col">
-    
-
       {/* Main 404 content */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="max-w-2xl w-full text-center space-y-8">
@@ -31,7 +29,7 @@ export default function NotFound() {
             Looks like this route got lost in a merge conflict or never made it
             past code review.
             <br className="hidden sm:block" />
-            No worries — let's get you back to logging real progress.
+            No worries — let&apos;s get you back to logging real progress.
           </p>
 
           {/* CTA */}
@@ -52,12 +50,8 @@ export default function NotFound() {
               </Link>
             </Button>
           </div>
-
-        
         </div>
       </div>
-
-    
     </div>
   );
 }

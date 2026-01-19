@@ -5,6 +5,7 @@ import InputComponent from "@/components/form/InputComponent";
 import PageHeader from "@/components/PageHeader";
 import BulkUploadDialog from "@/components/BulkUploadDialog";
 import { useGlobal } from "@/context/GlobalContext";
+import { useProject } from "@/context/ProjectContext";
 import { CompanyType, ProjectType } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { Plus, Upload } from "lucide-react";
@@ -15,8 +16,8 @@ import TableComponent from "@/components/TableComponent";
 function CompanyDetailsPage() {
   const params = useParams();
   const companyId = params.id as string;
-  const { currentProjects: allProjects, handleAddProject: addProject } =
-    useGlobal();
+  const { projects: allProjects, addProject } = useProject();
+  const { globalLoading } = useGlobal();
 
   const [company, setCompany] = useState<CompanyType | null>(null);
   const [projects, setProjects] = useState<ProjectType[]>([]);
@@ -77,7 +78,10 @@ function CompanyDetailsPage() {
     if (!company?.id) return;
 
     setAddingProject(true);
-    const success = await addProject(newProjectName, company.id);
+    const success = await addProject({
+      name: newProjectName,
+      company_id: company.id,
+    });
     setAddingProject(false);
 
     if (success) {
@@ -223,19 +227,20 @@ function CompanyDetailsPage() {
       </div>
 
       <div className="flex flex-col items-center gap-2 border-t pt-4">
-
         <div className="w-full ">
           <TableComponent
-            title={"Projects"}
             data={projects}
             columns={projectColumns}
-            filterConfig={{
-              data: projects,
-              label: "Filter By Projects",
-              labelKey: "name",
-              valueKey: "id",
-              searchPlaceholder: "Search Projects",
+            viewPath="projects"
+            onEdit={(project) => {
+              // Handle edit - you can implement this later
+              console.log("Edit project:", project);
             }}
+            onDelete={(project) => {
+              // Handle delete - you can implement this later
+              console.log("Delete project:", project);
+            }}
+            loading={globalLoading}
           />
         </div>
       </div>
