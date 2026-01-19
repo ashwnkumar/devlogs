@@ -4,12 +4,11 @@ export type TableColumn<T extends object> = {
   label: string;
   key: keyof T | string;
   render?: (row: T) => React.ReactNode;
-
 };
 
-export type TableActions = {
+export type TableActions<T extends object = object> = {
   label?: string;
-  onClick: (row: any) => void;
+  onClick: (row: T) => void;
   icon?: LucideIcon;
 };
 
@@ -22,7 +21,7 @@ export type TableComponentProps<T extends object> = {
   dataPath?: string;
   revalidate?: number | string;
   filterConfig: {
-    data?: any[];
+    data?: unknown[];
     label?: string;
     labelKey?: string;
     valueKey?: string;
@@ -41,7 +40,7 @@ export type TableComponentProps<T extends object> = {
   customForm?: (
     mode: "add" | "edit",
     row: T | null,
-    onSave: (data: any) => void,
+    onSave: (data: Partial<T>) => void,
     onCancel: () => void,
   ) => React.ReactNode; // Override form
 };

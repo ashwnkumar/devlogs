@@ -29,24 +29,24 @@ import {
 import { useRouter } from "next/navigation";
 import { Skeleton } from "./ui/skeleton";
 
-type TableComponentProps<T extends object> = {
+type TableComponentProps<T extends object & { id: string | number }> = {
   data: T[];
   columns: TableColumn<T>[];
-  actions?: TableActions[];
+  actions?: TableActions<T>[];
   viewPath?: string;
   onEdit: (row: T) => void;
   onDelete: (row: T) => void;
-  loading?: boolean
+  loading?: boolean;
 };
 
-function TableComponent<T extends object>({
+function TableComponent<T extends object & { id: string | number }>({
   data,
   columns,
   actions = [],
   viewPath,
   onEdit,
   onDelete,
-  loading
+  loading,
 }: TableComponentProps<T>) {
   const router = useRouter();
   const [view, setView] = useState<boolean>(false);
@@ -103,83 +103,91 @@ function TableComponent<T extends object>({
                 </TableCell>
                 {columns.map((_, colIdx) => (
                   <TableCell key={colIdx}>
-                    <Skeleton className="h-4 w-full max-w-[240px]" />
+                    <Skeleton className="h-4 w-full max-w-60" />
                   </TableCell>
                 ))}
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      ):(
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>#</TableHead>
-            {columns.map((col, colIdx) => (
-              <TableHead key={String(col.key) || colIdx}>{col.label}</TableHead>
-            ))}
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((row, rowIdx) => (
-            <TableRow onClick={() => handleRowClick(row)} key={rowIdx}>
-              <TableCell>{rowIdx + 1}</TableCell>
-              {columns.map((col) => (
-                <TableCell key={String(col.key)}>
-                  {col.render ? col.render(row) : (row as any)[col.key]}
-                </TableCell>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>#</TableHead>
+              {columns.map((col, colIdx) => (
+                <TableHead key={String(col.key) || colIdx}>
+                  {col.label}
+                </TableHead>
               ))}
-              {actions.length > 0 && (
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant={"outline"} size={"icon"}>
-                        <EllipsisVertical />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-40" align="end">
-                      {actions.map((action, actionIdx) => (
-                        <DropdownMenuItem key={actionIdx} asChild>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onClick={() => action.onClick(row)}
-                          >
-                            {action.icon && <action.icon />}
-                            {action.label}
-                          </Button>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              )}
-              <TableCell onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onEdit(row)}
-                    title="Edit"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => onDelete(row)}
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>)}
+          </TableHeader>
+          <TableBody>
+            {data.map((row, rowIdx) => (
+              <TableRow onClick={() => handleRowClick(row)} key={rowIdx}>
+                <TableCell>{rowIdx + 1}</TableCell>
+                {columns.map((col) => (
+                  <TableCell key={String(col.key)}>
+                    {col.render
+                      ? col.render(row)
+                      : String(
+                          (row as Record<string, unknown>)[col.key as string] ??
+                            "",
+                        )}
+                  </TableCell>
+                ))}
+                {actions.length > 0 && (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant={"outline"} size={"icon"}>
+                          <EllipsisVertical />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-40" align="end">
+                        {actions.map((action, actionIdx) => (
+                          <DropdownMenuItem key={actionIdx} asChild>
+                            <Button
+                              variant="ghost"
+                              className="w-full justify-start"
+                              onClick={() => action.onClick(row)}
+                            >
+                              {action.icon && <action.icon />}
+                              {action.label}
+                            </Button>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(row)}
+                      title="Edit"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => onDelete(row)}
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
       <Sheet open={view} onOpenChange={setView}>
         <SheetContent>
           <SheetHeader>
@@ -195,7 +203,13 @@ function TableComponent<T extends object>({
               >
                 <p className="font-medium text-sm">{col.label}:</p>
                 <p className="text-lg font-light">
-                  {col.render ? col.render(selected as T) : selected[col.key]}
+                  {col.render
+                    ? col.render(selected as T)
+                    : String(
+                        (selected as Record<string, unknown>)[
+                          col.key as string
+                        ] ?? "",
+                      )}
                 </p>
               </div>
             ))}
