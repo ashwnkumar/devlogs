@@ -1,5 +1,5 @@
 "use client";
-import { CompanyType, ProjectType, TaskTypeType } from "@/types";
+import { TaskTypeType } from "@/types";
 import {
   createContext,
   useCallback,
@@ -11,130 +11,22 @@ import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
 
 type GlobalContextType = {
-  companies: CompanyType[];
   taskTypes: TaskTypeType[];
   globalLoading: boolean;
-  currentProjects: ProjectType[];
   setGlobalLoading: (globalLoading: boolean) => void;
-  fetchCompanies: () => Promise<void>;
-  handleAddProject: (name: string, companyId: string) => Promise<boolean>;
-  handleDeleteProject: (projectId: string) => Promise<boolean>;
+  fetchTaskTypes: () => Promise<void>;
+  editTaskType: (id: string, name: string) => Promise<boolean>;
 };
 
 const GlobalContext = createContext<GlobalContextType | null>(null);
 
 export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [companies, setCompanies] = useState<CompanyType[]>([]);
   const [taskTypes, setTaskTypes] = useState<TaskTypeType[]>([]);
-  const [currentProjects, setCurrentProjects] = useState<ProjectType[]>([]);
   const [globalLoading, setGlobalLoading] = useState(false);
 
-  const fetchCompanies = useCallback(async () => {
-    if (!user) return;
-    setGlobalLoading(true);
-    try {
-      const response = await fetch("/api/companies");
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch companies");
-      }
-
-      const { data } = await response.json();
-      setCompanies(data || []);
-    } catch (error) {
-      console.error("Error fetching companies:", error);
-    } finally {
-      setGlobalLoading(false);
-    }
-  }, [user]);
-
-  const fetchCurrentProjects = async () => {
-    try {
-      const response = await fetch(
-        `/api/projects?company_id=${user?.current_company}`,
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch data");
-      }
-
-      const data = await response.json();
-      setCurrentProjects(data.data || data || []);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-
-  const handleAddProject = async (
-    name: string,
-    companyId: string,
-  ): Promise<boolean> => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      toast.error("Project name cannot be empty");
-      return false;
-    }
-    setGlobalLoading(true);
-    try {
-      const response = await fetch("/api/projects/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: trimmed,
-          companyId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to add project");
-      }
-
-      toast.success("Project added successfully");
-      return true;
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to add project",
-      );
-      return false;
-    } finally {
-      setGlobalLoading(false);
-    }
-  };
-
-  const handleDeleteProject = async (projectId: string): Promise<boolean> => {
-    setGlobalLoading(true);
-    try {
-      const response = await fetch(`/api/projects/${projectId}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to delete project");
-      }
-
-      toast.success("Project deleted successfully");
-      return true;
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete project",
-      );
-      console.error(error);
-      return false;
-    } finally {
-      setGlobalLoading(false);
-    }
-  };
-
   const fetchTaskTypes = useCallback(async () => {
+    if (!user) return;
     setGlobalLoading(true);
     try {
       const response = await fetch("/api/task-types");
@@ -153,23 +45,59 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
+  const editTaskType = async (id: string, name: string): Promise<boolean> => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      toast.error("Task type name cannot be empty");
+      return false;
+    }
+
+    setGlobalLoading(true);
+    try {
+      const response = await fetch(`/api/task-types/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: trimmedName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update task type");
+      }
+
+      // Update the task type in the local state
+      setTaskTypes((prev) =>
+        prev.map((taskType) =>
+          taskType.id === id ? { ...taskType, ...data.data } : taskType,
+        ),
+      );
+      toast.success("Task type updated successfully");
+      return true;
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update task type",
+      );
+      return false;
+    } finally {
+      setGlobalLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTaskTypes();
-    fetchCompanies();
-    fetchCurrentProjects();
-  }, [user]);
+  }, [fetchTaskTypes]);
 
   return (
     <GlobalContext.Provider
       value={{
-        companies,
         taskTypes,
         globalLoading,
-        currentProjects,
-        fetchCompanies,
         setGlobalLoading,
-        handleAddProject,
-        handleDeleteProject,
+        fetchTaskTypes,
+        editTaskType,
       }}
     >
       {children}

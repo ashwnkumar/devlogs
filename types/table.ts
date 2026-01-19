@@ -5,30 +5,6 @@ export type TableColumn<T extends object> = {
   key: keyof T | string;
   render?: (row: T) => React.ReactNode;
 
-  // New metadata fields for form generation
-  dataType?:
-    | "text"
-    | "number"
-    | "date"
-    | "boolean"
-    | "select"
-    | "email"
-    | "time"
-    | "url";
-  editable?: boolean; // Default: true - controls edit form inclusion
-  addable?: boolean; // Default: true - controls add form inclusion
-  required?: boolean; // Default: false
-  options?: Array<{ label: string; value: string | number }>; // For select type
-  placeholder?: string;
-  defaultValue?: any; // Default value for add form
-  validation?: {
-    min?: number; // For number/date
-    max?: number; // For number/date
-    minLength?: number; // For text
-    maxLength?: number; // For text
-    pattern?: RegExp; // For text
-    customValidator?: (value: any) => string | null; // Returns error message or null
-  };
 };
 
 export type TableActions = {
