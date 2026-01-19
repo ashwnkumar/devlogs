@@ -60,8 +60,8 @@ function ProjectPage() {
 
   return (
     <div className="flex flex-col w-full h-full gap-6">
-      <PageHeader title="Projects" />
       <TableComponent<ProjectType>
+        title="Projects"
         dataPath="/projects"
         columns={columns}
         enableAdd={true}

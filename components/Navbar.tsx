@@ -11,14 +11,14 @@ function Navbar() {
         <div className="bg-primary text-white flex items-center p-1 rounded">
           <Code2 />
         </div>
-        <span>DevLogs</span>
+        <span className="font-semibold">DevLogs</span>
       </h1>
 
       <div className="flex items-center gap-4">
-        <Button>
+        {/* <Button>
           <Plus />
           Quick Log
-        </Button>
+        </Button> */}
         <Separator orientation="vertical" />
         <ProfileDropdown />
       </div>

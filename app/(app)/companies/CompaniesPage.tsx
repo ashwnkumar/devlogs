@@ -81,9 +81,8 @@ function CompaniesPage() {
 
   return (
     <div className="flex flex-col w-full h-full gap-6">
-      <PageHeader title="Companies" />
-
       <TableComponent<CompanyType>
+        title="Companies"
         dataPath="/companies"
         columns={columns}
         enableAdd={true}

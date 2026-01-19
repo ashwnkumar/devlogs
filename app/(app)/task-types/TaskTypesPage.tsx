@@ -68,8 +68,8 @@ function TaskTypesPage() {
 
   return (
     <div className=" w-full h-full flex flex-col items-center justify-start gap-6">
-      <PageHeader title="Task Types" />
       <TableComponent<TaskTypeType>
+        title="Task Types"
         dataPath="/task-types"
         columns={columns}
         filterConfig={{

@@ -103,8 +103,8 @@ function AllLogsPage() {
 
   return (
     <div className="flex flex-col w-full h-full gap-4">
-      <PageHeader title="All Logs" />
       <TableComponent
+      title="All Logs"
         filterConfig={filterConfig}
         dataPath="/tasks"
         columns={columns}

@@ -223,13 +223,10 @@ function CompanyDetailsPage() {
       </div>
 
       <div className="flex flex-col items-center gap-2 border-t pt-4">
-        <PageHeader
-          title={"Projects"}
-          description={`Projects you worked on at ${company.name}`}
-        />
 
         <div className="w-full ">
           <TableComponent
+            title={"Projects"}
             data={projects}
             columns={projectColumns}
             filterConfig={{

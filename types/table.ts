@@ -38,6 +38,7 @@ export type TableActions = {
 };
 
 export type TableComponentProps<T extends object> = {
+  title: string;
   data?: T[];
   columns: TableColumn<T>[];
   actions?: TableActions[]; // Deprecated but still supported

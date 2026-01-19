@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from("companies")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("joined_at", { ascending: false });
 
     if (!fetchAll) {
       query = query.eq("user_id", user.id);
