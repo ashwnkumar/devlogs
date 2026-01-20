@@ -27,7 +27,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header / Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="w-full flex h-16 items-center justify-around">
           <div className="flex items-center gap-2 font-semibold tracking-tight">
             <div className="bg-linear-to-br from-primary to-primary/70 text-white flex items-center p-1 rounded">

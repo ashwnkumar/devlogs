@@ -15,7 +15,6 @@ import {
 
 import "react-calendar-heatmap/dist/styles.css";
 import { ChartCard } from "./ChartCard";
-import { subDays, format } from "date-fns";
 
 // ── Dummy data (replace with real props from parent later)
 const last7DaysTasks = [
@@ -37,9 +36,6 @@ const tasksByCategory = [
 ];
 
 export function DashboardCharts() {
-  const endDate = new Date(); // today ~ Jan 20, 2026
-  const startDate = subDays(endDate, 30); // ~ last 30 days
-
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {/* Chart 1: Tasks last 7 days – BarChart */}
@@ -65,11 +61,7 @@ export function DashboardCharts() {
                 border: "1px solid var(--border)",
               }}
             />
-            <Bar
-              dataKey="tasks"
-              fill="var(--primary)"
-              radius={[4, 4, 0, 0]}
-            />
+            <Bar dataKey="tasks" fill="var(--primary)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>
@@ -79,7 +71,7 @@ export function DashboardCharts() {
         title="Tasks by Category"
         description="How your effort is distributed"
       >
-        <div className="h-[260px]">
+        <div className="h-65">
           <ResponsiveContainer>
             <PieChart>
               <Pie

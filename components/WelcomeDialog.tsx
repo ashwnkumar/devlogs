@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { X, ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
 import { createClient } from "@/lib/supabase/client";
@@ -205,7 +205,7 @@ export function WelcomeDialog({ open, onOpenChange }: WelcomeDialogProps) {
 
         <DialogDescription asChild>
           <div className="space-y-6 py-2">
-            <div className="min-h-[80px]">{steps[currentStep].description}</div>
+            <div className="min-h-20">{steps[currentStep].description}</div>
 
             {steps[currentStep].url && (
               <div className="relative aspect-video w-full overflow-hidden rounded-lg border bg-muted">
@@ -247,7 +247,7 @@ export function WelcomeDialog({ open, onOpenChange }: WelcomeDialogProps) {
             <Button
               onClick={handleNext}
               disabled={isCompleting}
-              className="min-w-[120px]"
+              className="min-w-30"
             >
               {isCompleting
                 ? "Saving..."

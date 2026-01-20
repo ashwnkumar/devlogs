@@ -1,5 +1,4 @@
 "use client";
-import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,12 +10,12 @@ import { Flame, Clock, Calendar, ListChecks } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 
 function DashboardPage() {
-  const [stats, setStats] = useState({
+  const stats = {
     streak: 7,
     hoursThisWeek: 24.5,
     hoursAllTime: 156.8,
     tasksThisWeek: 12,
-  });
+  };
   const statItems = [
     {
       title: "Daily Streak",
@@ -64,7 +63,9 @@ function DashboardPage() {
   return (
     <div className="container mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Dashboard (test data)
+        </h1>
         <p className="text-muted-foreground mt-1">
           Track your work, see your focus evolve.
         </p>
@@ -72,7 +73,10 @@ function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
         {statItems.map((item, index) => (
-          <Card key={index} className="transition-all hover:shadow-md duration-300 ease-in-out ">
+          <Card
+            key={index}
+            className="transition-all hover:shadow-md duration-300 ease-in-out "
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {item.title}
@@ -97,7 +101,7 @@ function DashboardPage() {
           </Card>
         ))}
       </div>
-      <DashboardCharts/>
+      <DashboardCharts />
     </div>
   );
 }
