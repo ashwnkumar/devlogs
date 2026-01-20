@@ -74,8 +74,7 @@ function TableComponent<T extends object & { id: string | number }>({
           </EmptyMedia>
           <EmptyTitle>No Data Found</EmptyTitle>
           <EmptyDescription>
-            No data found. Add a company to get started or please try again
-            later.
+            No data found.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>

@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import "react-calendar-heatmap/dist/styles.css";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" });
 

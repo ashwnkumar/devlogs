@@ -27,7 +27,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header / Navbar */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="w-full flex h-16 items-center justify-around">
           <div className="flex items-center gap-2 font-semibold tracking-tight">
             <div className="bg-linear-to-br from-primary to-primary/70 text-white flex items-center p-1 rounded">
@@ -107,14 +107,14 @@ export default function Home() {
             <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent pointer-events-none" />
             <div className="p-4 md:p-8">
               {/* Placeholder for dashboard mockup image */}
-              <div className="aspect-video rounded-lg bg-muted/40 flex items-center justify-center text-muted-foreground text-lg font-medium">
+              <div className="aspect-video rounded-lg bg-red-500 flex items-center justify-center text-muted-foreground text-lg font-medium">
                 {/* In real app: <Image src="/dashboard-mockup.png" alt="DevLog Dashboard" fill className="object-cover" /> */}
                 {/* Clean analytics dashboard preview (dark mode friendly) */}
                 <Image
-                  src="/test2.jpg"
+                  src="/home.jpeg"
                   alt="DevLog Dashboard"
                   fill
-                  className="object-cover"
+                  className=""
                 />
               </div>
             </div>

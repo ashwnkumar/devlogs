@@ -1,6 +1,7 @@
 import ComingSoon from "@/components/ComingSoon";
 import React from "react";
 import type { Metadata } from "next";
+import DashboardPage from "./DashboardPage";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 function page() {
   return (
     <div>
-      <ComingSoon />
+      <DashboardPage />
     </div>
   );
 }
