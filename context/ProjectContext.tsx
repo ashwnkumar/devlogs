@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { ProjectType } from "@/types";
 import React, {
   createContext,
@@ -8,12 +8,12 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { useGlobal } from "./GlobalContext";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
 
 interface ProjectContextType {
   projects: ProjectType[];
+  loading: boolean;
   fetchProjects: (companyId?: string) => Promise<void>;
   addProject: (
     projectData: Omit<ProjectType, "id" | "created_at" | "updated_at">,
@@ -32,12 +32,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { user } = useAuth();
   const [projects, setProjects] = useState<ProjectType[]>([]);
-  const { setGlobalLoading } = useGlobal();
+  const [loading, setLoading] = useState(false);
 
   const fetchProjects = useCallback(
     async (companyId?: string) => {
       if (!user) return;
-      setGlobalLoading(true);
+      setLoading(true);
       try {
         const url = new URL("/api/projects", window.location.origin);
         if (companyId) {
@@ -57,10 +57,11 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({
         console.error("Error fetching projects:", error);
         toast.error("Failed to fetch projects");
       } finally {
-        setGlobalLoading(false);
+        setLoading(false);
       }
     },
-    [user, setGlobalLoading],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.id],
   );
 
   const addProject = async (
@@ -72,7 +73,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({
       return false;
     }
 
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
@@ -101,7 +102,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
@@ -114,7 +115,7 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({
       return false;
     }
 
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: "PUT",
@@ -144,12 +145,12 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
   const deleteProject = async (id: string): Promise<boolean> => {
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`/api/projects/${id}`, {
         method: "DELETE",
@@ -171,18 +172,21 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    if (user?.id) {
+      fetchProjects();
+    }
+  }, [user?.id, fetchProjects]);
 
   return (
     <ProjectContext.Provider
       value={{
         projects,
+        loading,
         fetchProjects,
         addProject,
         editProject,

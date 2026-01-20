@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { TaskType } from "@/types";
 import React, {
   createContext,
@@ -8,12 +8,12 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { useGlobal } from "./GlobalContext";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
 
 interface TaskContextType {
   tasks: TaskType[];
+  loading: boolean;
   fetchTasks: (projectId?: string, searchQuery?: string) => Promise<void>;
   addTask: (
     taskData: Omit<
@@ -42,12 +42,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<TaskType[]>([]);
-  const { setGlobalLoading } = useGlobal();
+  const [loading, setLoading] = useState(false);
 
   const fetchTasks = useCallback(
     async (projectId?: string, searchQuery?: string) => {
       if (!user) return;
-      setGlobalLoading(true);
+      setLoading(true);
       try {
         const url = new URL("/api/tasks", window.location.origin);
         if (projectId) {
@@ -70,10 +70,11 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({
         console.error("Error fetching tasks:", error);
         toast.error("Failed to fetch tasks");
       } finally {
-        setGlobalLoading(false);
+        setLoading(false);
       }
     },
-    [user, setGlobalLoading],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.id],
   );
 
   const addTask = async (
@@ -103,7 +104,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({
       return false;
     }
 
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch("/api/tasks", {
         method: "POST",
@@ -132,7 +133,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
@@ -147,7 +148,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({
       return false;
     }
 
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`/api/tasks/${id}`, {
         method: "PUT",
@@ -175,12 +176,12 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
   const deleteTask = async (id: string): Promise<boolean> => {
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`/api/tasks/${id}`, {
         method: "DELETE",
@@ -202,18 +203,20 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
-
+    if (user?.id) {
+      fetchTasks();
+    }
+  }, [user?.id, fetchTasks]);
   return (
     <TaskContext.Provider
       value={{
         tasks,
+        loading,
         fetchTasks,
         addTask,
         editTask,

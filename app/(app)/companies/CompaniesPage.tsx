@@ -15,8 +15,8 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 function CompaniesPage() {
-  const { globalLoading } = useGlobal();
-  const { companies, addCompany, editCompany, deleteCompany } = useCompany();
+  const { companies, loading, addCompany, editCompany, deleteCompany } =
+    useCompany();
   const [open, setOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<CompanyType | null>(
     null,
@@ -184,7 +184,7 @@ function CompaniesPage() {
         columns={columns}
         onEdit={handleEditCompany}
         onDelete={handleDeleteCompany}
-        loading={globalLoading}
+        loading={loading}
       />
 
       <SheetComponent
@@ -255,8 +255,8 @@ function CompaniesPage() {
             </label>
           </div>
           <div className="flex flex-col items-center gap-2 w-full">
-            <Button type="submit" className="w-full" disabled={globalLoading}>
-              {globalLoading
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading
                 ? "Processing..."
                 : editingCompany
                   ? "Update Company"

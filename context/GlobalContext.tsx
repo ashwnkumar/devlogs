@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
+import { useCompany } from "./CompanyContext";
 
 type GlobalContextType = {
   taskTypes: TaskTypeType[];
@@ -43,7 +44,8 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setGlobalLoading(false);
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const editTaskType = async (id: string, name: string): Promise<boolean> => {
     const trimmedName = name.trim();
@@ -87,8 +89,10 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    fetchTaskTypes();
-  }, [fetchTaskTypes]);
+    if (user?.id) {
+      fetchTaskTypes();
+    }
+  }, [user?.id, fetchTaskTypes]);
 
   return (
     <GlobalContext.Provider
