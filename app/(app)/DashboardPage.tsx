@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Flame, Clock, Calendar, ListChecks } from "lucide-react";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
+import ChecklistCard from "@/components/dashboard/ChecklistCard";
 
 function DashboardPage() {
   const stats = {
@@ -71,6 +72,7 @@ function DashboardPage() {
         </p>
       </div>
 
+      <ChecklistCard />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
         {statItems.map((item, index) => (
           <Card

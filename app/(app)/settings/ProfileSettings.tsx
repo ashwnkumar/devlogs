@@ -37,12 +37,15 @@ function ProfileSettings() {
     }
 
     try {
+      // Exclude protected fields from the update
+      const { id, created_at, ...updateData } = formData;
+
       const response = await fetch("/api/users/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(updateData),
       });
 
       if (!response.ok) {
@@ -106,7 +109,6 @@ function ProfileSettings() {
           value={formData?.timezone}
           onChange={handleInputChange}
         />
-       
       </div>
     </div>
   );

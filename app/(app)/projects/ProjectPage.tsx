@@ -12,6 +12,7 @@ import { formatDate } from "@/lib/utils";
 import { CompanyType, ProjectType, TableColumn } from "@/types";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 function ProjectPage() {
   const { projects, loading, addProject, editProject, deleteProject } =
@@ -133,7 +134,9 @@ function ProjectPage() {
       label: "Add",
       icon: Plus,
       onClick: () => {
-        reset(); // Reset form for new project
+        if (projects.length === 0)
+          return toast.info("You must add a company before adding a project!");
+        reset();
         setOpen(true);
       },
     },

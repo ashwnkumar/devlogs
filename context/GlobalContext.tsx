@@ -7,9 +7,17 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
+import { useAuth } from "./AuthContext";
 import { useCompany } from "./CompanyContext";
+import { useProject } from "./ProjectContext";
+
+type ChecklistItem = {
+  id: "companies" | "projects" | "name";
+  label: string;
+  route: string;
+  status: boolean;
+};
 
 type GlobalContextType = {
   taskTypes: TaskTypeType[];
@@ -17,14 +25,39 @@ type GlobalContextType = {
   setGlobalLoading: (globalLoading: boolean) => void;
   fetchTaskTypes: () => Promise<void>;
   editTaskType: (id: string, name: string) => Promise<boolean>;
+  checklist: ChecklistItem[];
 };
 
 const GlobalContext = createContext<GlobalContextType | null>(null);
 
 export function GlobalProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { companies } = useCompany();
+  const { projects } = useProject();
   const [taskTypes, setTaskTypes] = useState<TaskTypeType[]>([]);
   const [globalLoading, setGlobalLoading] = useState(false);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([
+    {
+      id: "name",
+      label: "Update your name in your profile",
+      route: "/settings?tab=profile",
+      status: false,
+    },
+    {
+      id: "companies",
+      label: "Add your company",
+      route: "/companies",
+      status: false,
+    },
+    {
+      id: "projects",
+      label: "Create your first project",
+      route: "/projects",
+      status: false,
+    },
+  ]);
+
+  console.log("user", user);
 
   const fetchTaskTypes = useCallback(async () => {
     if (!user) return;
@@ -94,6 +127,33 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user?.id, fetchTaskTypes]);
 
+  const hasName = useCallback((): boolean => {
+    if (!user?.email) return false;
+
+    const emailClean = user.email.split("@")[0];
+    return user.name !== emailClean;
+  }, [user]);
+
+  useEffect(() => {
+    setChecklist((prev) =>
+      prev.map((item) => {
+        switch (item.id) {
+          case "companies":
+            return { ...item, status: companies.length > 0 };
+
+          case "projects":
+            return { ...item, status: projects.length > 0 };
+
+          case "name":
+            return { ...item, status: hasName() };
+
+          default:
+            return item;
+        }
+      }),
+    );
+  }, [companies.length, projects.length, hasName]);
+
   return (
     <GlobalContext.Provider
       value={{
@@ -102,6 +162,7 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
         setGlobalLoading,
         fetchTaskTypes,
         editTaskType,
+        checklist,
       }}
     >
       {children}
