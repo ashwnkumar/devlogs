@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const supabase = await createClient();
+    const supabase = createClient();
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (email: string, password: string) => {
-    const supabase = await createClient();
+    const supabase = createClient();
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      const supabase = await createClient();
+      const supabase = createClient();
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Logout error:", error);
@@ -129,25 +129,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const fetchSession = async () => {
+    let mounted = true;
+
+    const initAuth = async () => {
       const supabase = await createClient();
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) {
+
+      // Set up auth state listener first
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user && mounted) {
           fetchUserDetails();
+        } else if (!session?.user && mounted) {
+          setUser(null);
         }
       });
+
+      // Fetch initial session (onAuthStateChange will handle the user fetch)
+      await supabase.auth.getSession();
+
+      return subscription;
     };
 
-    const authChange = async () => {
-      const supabase = await createClient();
-      supabase.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) {
-          fetchUserDetails();
-        }
-      });
+    const subscription = initAuth();
+
+    return () => {
+      mounted = false;
+      subscription.then((sub) => sub?.unsubscribe());
     };
-    authChange();
-    fetchSession();
   }, []);
 
   return (

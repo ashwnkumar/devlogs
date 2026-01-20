@@ -16,8 +16,8 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 function AllLogsPage() {
-  const { globalLoading, taskTypes } = useGlobal();
-  const { tasks, addTask, editTask, deleteTask } = useTask();
+  const { taskTypes } = useGlobal();
+  const { tasks, loading, addTask, editTask, deleteTask } = useTask();
   const { projects } = useProject();
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskType | null>(null);
@@ -214,7 +214,7 @@ function AllLogsPage() {
         columns={columns}
         onEdit={handleEditTask}
         onDelete={handleDeleteTask}
-        loading={globalLoading}
+        loading={loading}
       />
 
       <SheetComponent
@@ -314,8 +314,8 @@ function AllLogsPage() {
           </div>
 
           <div className="flex flex-col items-center gap-2 w-full">
-            <Button type="submit" className="w-full" disabled={globalLoading}>
-              {globalLoading
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading
                 ? "Processing..."
                 : editingTask
                   ? "Update Task"

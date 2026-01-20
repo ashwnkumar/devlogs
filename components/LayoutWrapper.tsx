@@ -15,10 +15,10 @@ type Props = {
 function LayoutWrapper({ children }: Props) {
   return (
     <AuthProvider>
-      <GlobalProvider>
-        <CompanyProvider>
-          <ProjectProvider>
-            <TaskProvider>
+      <CompanyProvider>
+        <ProjectProvider>
+          <TaskProvider>
+            <GlobalProvider>
               <div className="flex min-h-screen flex-col">
                 <nav>
                   <Navbar />
@@ -35,10 +35,10 @@ function LayoutWrapper({ children }: Props) {
                   </div>
                 </div>
               </div>
-            </TaskProvider>
-          </ProjectProvider>
-        </CompanyProvider>
-      </GlobalProvider>
+            </GlobalProvider>
+          </TaskProvider>
+        </ProjectProvider>
+      </CompanyProvider>
     </AuthProvider>
   );
 }

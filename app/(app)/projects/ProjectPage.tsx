@@ -14,8 +14,8 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 function ProjectPage() {
-  const { globalLoading } = useGlobal();
-  const { projects, addProject, editProject, deleteProject } = useProject();
+  const { projects, loading, addProject, editProject, deleteProject } =
+    useProject();
   const { companies } = useCompany();
   const [open, setOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectType | null>(
@@ -147,7 +147,7 @@ function ProjectPage() {
         columns={columns}
         onEdit={handleEditProject}
         onDelete={handleDeleteProject}
-        loading={globalLoading}
+        loading={loading}
       />
 
       <SheetComponent
@@ -182,8 +182,8 @@ function ProjectPage() {
           />
 
           <div className="flex flex-col items-center gap-2 w-full">
-            <Button type="submit" className="w-full" disabled={globalLoading}>
-              {globalLoading
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading
                 ? "Processing..."
                 : editingProject
                   ? "Update Project"

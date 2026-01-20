@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { CompanyType } from "@/types";
 import React, {
   createContext,
@@ -8,12 +8,12 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import { useGlobal } from "./GlobalContext";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
 
 interface CompanyContextType {
   companies: CompanyType[];
+  loading: boolean;
   fetchCompanies: () => Promise<void>;
   addCompany: (
     companyData: Omit<
@@ -37,11 +37,11 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const { user } = useAuth();
   const [companies, setCompanies] = useState<CompanyType[]>([]);
-  const { setGlobalLoading } = useGlobal();
+  const [loading, setLoading] = useState(false);
 
   const fetchCompanies = useCallback(async () => {
     if (!user) return;
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch("/api/companies");
 
@@ -56,9 +56,10 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       console.error("Error fetching companies:", error);
       toast.error("Failed to fetch companies");
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
-  }, [user, setGlobalLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const addCompany = async (
     companyData: Omit<
@@ -72,7 +73,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       return false;
     }
 
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch("/api/companies", {
         method: "POST",
@@ -101,7 +102,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
@@ -116,7 +117,7 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       return false;
     }
 
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`/api/companies/${id}`, {
         method: "PUT",
@@ -146,12 +147,12 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
   const deleteCompany = async (id: string): Promise<boolean> => {
-    setGlobalLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`/api/companies/${id}`, {
         method: "DELETE",
@@ -173,18 +174,21 @@ export const CompanyProvider: React.FC<{ children: ReactNode }> = ({
       );
       return false;
     } finally {
-      setGlobalLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCompanies();
-  }, [fetchCompanies]);
+    if (user?.id) {
+      fetchCompanies();
+    }
+  }, [user?.id, fetchCompanies]);
 
   return (
     <CompanyContext.Provider
       value={{
         companies,
+        loading,
         fetchCompanies,
         addCompany,
         editCompany,
