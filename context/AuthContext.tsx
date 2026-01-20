@@ -28,12 +28,15 @@ type AuthContextType = {
     success: boolean;
     error?: unknown;
   }>;
+  showWelcome: boolean;
+  setShowWelcome: (showWelcome: boolean) => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserType | null>(null);
+  const [showWelcome, setShowWelcome] = useState<boolean>(false);
 
   const fetchUserDetails = async () => {
     try {
@@ -62,7 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Login error:", error);
         return { success: false, error };
       } else {
-        return { success: true, data };
+        const { data: metadata, error: metaErr } = await supabase
+          .from("users")
+          .select("metadata")
+          .eq("id", data.user.id)
+          .single();
+
+        return { success: true, data, metadata };
       }
     } catch (error) {
       console.error("Something Went Wrong:", error);
@@ -137,7 +146,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ login, register, logout, user }}>
+    <AuthContext.Provider
+      value={{ login, register, logout, user, showWelcome, setShowWelcome }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -27,6 +26,7 @@ export function LoginForm({
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const { setShowWelcome } = useAuth();
 
   const validateForm = () => {
     const err: { email?: string; password?: string } = {};
@@ -68,6 +68,8 @@ export function LoginForm({
       toast.error(errorMessage);
       setLoading(false);
     } else {
+      const onb = res?.metadata?.metadata?.is_onboarded;
+      setShowWelcome(!onb);
       setLoading(false);
       toast.success("Logged in successfully");
       redirect("/");
