@@ -107,7 +107,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent pointer-events-none" />
             <div className="p-4 md:p-8">
               {/* Placeholder for dashboard mockup image */}
-              <div className="aspect-video rounded-lg bg-red-500 flex items-center justify-center text-muted-foreground text-lg font-medium">
+              <div className="aspect-video rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground text-lg font-medium">
                 {/* In real app: <Image src="/dashboard-mockup.png" alt="DevLog Dashboard" fill className="object-cover" /> */}
                 {/* Clean analytics dashboard preview (dark mode friendly) */}
                 <Image
