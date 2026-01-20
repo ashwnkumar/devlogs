@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
-import type { UserType } from "@/types";
+import type { UserType, UserMetadata } from "@/types";
 
 type AuthContextType = {
   user: UserType | null;
@@ -71,7 +71,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("id", data.user.id)
           .single();
 
-        return { success: true, data, metadata };
+        return {
+          success: true,
+          data: {
+            ...data,
+            metadata,
+          },
+        };
       }
     } catch (error) {
       console.error("Something Went Wrong:", error);

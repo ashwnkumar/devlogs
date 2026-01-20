@@ -68,7 +68,7 @@ export function LoginForm({
       toast.error(errorMessage);
       setLoading(false);
     } else {
-      const onb = res?.metadata?.metadata?.is_onboarded;
+      const onb = (res.data as any)?.metadata?.metadata?.is_onboarded;
       setShowWelcome(!onb);
       setLoading(false);
       toast.success("Logged in successfully");

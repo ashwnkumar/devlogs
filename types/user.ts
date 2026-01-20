@@ -12,6 +12,10 @@ export interface UserType {
   current_company: string | null;
 }
 
+export interface UserMetadata {
+  is_onboarded?: boolean;
+}
+
 export type CompanyType = {
   id: string;
   user_id: string;
@@ -39,7 +43,6 @@ export type TaskTypeType = {
   created_at: string;
   updated_at: string;
 };
-
 
 export type TaskType = {
   id: string;
