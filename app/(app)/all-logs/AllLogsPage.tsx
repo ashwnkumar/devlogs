@@ -14,11 +14,14 @@ import { formatDate } from "@/lib/utils";
 import { TaskType, ProjectType, TaskTypeType, TableColumn } from "@/types";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { useCompany } from "@/context/CompanyContext";
+import { toast } from "sonner";
 
 function AllLogsPage() {
   const { taskTypes } = useGlobal();
   const { tasks, loading, addTask, editTask, deleteTask } = useTask();
   const { projects } = useProject();
+  const {companies} = useCompany()
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskType | null>(null);
   const [formData, setFormData] = useState({
@@ -200,7 +203,8 @@ function AllLogsPage() {
       label: "Add",
       icon: Plus,
       onClick: () => {
-        reset(); // Reset form for new task
+        if (projects.length === 0 || companies.length === 0) return toast.info('You must a add a company and project before you log a task!')
+        reset(); 
         setOpen(true);
       },
     },

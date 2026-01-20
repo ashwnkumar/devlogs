@@ -3,12 +3,11 @@
 import CustomDialog from "@/components/CustomDialog";
 import InputComponent from "@/components/form/InputComponent";
 import PageHeader from "@/components/PageHeader";
-import BulkUploadDialog from "@/components/BulkUploadDialog";
 import { useGlobal } from "@/context/GlobalContext";
 import { useProject } from "@/context/ProjectContext";
 import { CompanyType, ProjectType } from "@/types";
 import { formatDate } from "@/lib/utils";
-import { Plus, Upload } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import TableComponent from "@/components/TableComponent";
@@ -28,9 +27,6 @@ function CompanyDetailsPage() {
   const [addProjectDialogOpen, setAddProjectDialogOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState("");
   const [addingProject, setAddingProject] = useState(false);
-
-  // Bulk upload dialog state
-  const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(false);
 
   const fetchCompany = async () => {
     if (!companyId) return;
@@ -94,20 +90,6 @@ function CompanyDetailsPage() {
     setNewProjectName("");
     setAddProjectDialogOpen(false);
   };
-
-  const projectActions = [
-    {
-      label: "Bulk Upload",
-      icon: Upload,
-      variant: "secondary",
-      onClick: () => setBulkUploadDialogOpen(true),
-    },
-    {
-      label: "Add Project",
-      icon: Plus,
-      onClick: () => setAddProjectDialogOpen(true),
-    },
-  ];
 
   const projectColumns = [
     { label: "Name", key: "name" },
@@ -270,15 +252,6 @@ function CompanyDetailsPage() {
           />
         </div>
       </CustomDialog>
-
-      <BulkUploadDialog
-        open={bulkUploadDialogOpen}
-        onOpenChange={setBulkUploadDialogOpen}
-        companyId={companyId}
-        onUploadSuccess={() => {
-          fetchCompany();
-        }}
-      />
     </div>
   );
 }

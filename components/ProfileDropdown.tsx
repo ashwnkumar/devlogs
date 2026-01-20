@@ -78,15 +78,6 @@ function ProfileDropdown() {
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link
-              href={"/profile"}
-              className="w-full flex items-center gap-2 justify-start"
-            >
-              <User2 />
-              Profile
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
               href={"/settings?tab=profile"}
               className="w-full flex items-center gap-2 justify-start"
             >

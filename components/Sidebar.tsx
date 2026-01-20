@@ -25,7 +25,7 @@ function Sidebar() {
   const pathname = usePathname();
   const sidebarItems: SidebarItemProps[] = [
     { label: "Dashboard", route: "/", icon: LayoutDashboard },
-    { label: "This Week", route: "/this-week", icon: CalendarDays },
+    // { label: "This Week", route: "/this-week", icon: CalendarDays },
     { label: "All Logs", route: "/all-logs", icon: Logs },
     { label: "Companies", route: "/companies", icon: BriefcaseBusiness },
     { label: "Projects", route: "/projects", icon: FolderOpen },

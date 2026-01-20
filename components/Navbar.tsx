@@ -1,5 +1,5 @@
 "use client";
-import { Code2, Plus } from "lucide-react";
+import { Code2, ListChecks, Plus } from "lucide-react";
 import ProfileDropdown from "./ProfileDropdown";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
@@ -7,9 +7,12 @@ import { useAuth } from "@/context/AuthContext";
 import { WelcomeDialog } from "./WelcomeDialog";
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useGlobal } from "@/context/GlobalContext";
+import Link from "next/link";
 
 function Navbar() {
   const { showWelcome, setShowWelcome, user } = useAuth();
+  const { checklist } = useGlobal();
 
   const init = async () => {
     const supabase = createClient();
@@ -21,6 +24,10 @@ function Navbar() {
     if (error) return console.log("error", error);
     return data?.metadata?.is_onboarded;
   };
+
+  const show = checklist.some((i) => i.status === false);
+  const total = checklist.length;
+  const done = checklist.filter((i) => i.status).length;
 
   useEffect(() => {
     if (user) {
@@ -39,6 +46,13 @@ function Navbar() {
       </h1>
 
       <div className="flex items-center gap-4">
+        {show && (
+          <Button asChild > 
+            <Link href={"/"}>
+              <ListChecks /> Checklist Pending ({done}/{total}){" "}
+            </Link>
+          </Button>
+        )}
         {/* <Button>
           <Plus />
           Quick Log
