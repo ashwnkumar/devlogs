@@ -12,12 +12,14 @@ import { useProject } from "@/context/ProjectContext";
 import { useGlobal } from "@/context/GlobalContext";
 import { formatDate } from "@/lib/utils";
 import { TaskType, ProjectType, TaskTypeType, TableColumn } from "@/types";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useState } from "react";
 import { useCompany } from "@/context/CompanyContext";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 function AllLogsPage() {
+  const router = useRouter()
   const { taskTypes } = useGlobal();
   const { tasks, loading, addTask, editTask, deleteTask } = useTask();
   const { projects } = useProject();
@@ -199,6 +201,15 @@ function AllLogsPage() {
   ];
 
   const headerActions = [
+    {
+      label: "Bulk Import",
+      icon: Upload,
+      onClick: () => {
+        if (companies.length === 0) return toast.info('You must add at least one company first!')
+       router.push('/bulk-import')
+      },
+      variant: "secondary"
+    },
     {
       label: "Add",
       icon: Plus,

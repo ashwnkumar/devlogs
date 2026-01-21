@@ -7,7 +7,8 @@ function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <html>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider> 
+          {children}</AuthProvider>
         <Toaster position="top-right"/>
       </body>
     </html>
