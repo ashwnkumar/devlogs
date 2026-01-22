@@ -1,24 +1,85 @@
 "use client";
 import PageHeader from "@/components/PageHeader";
 import { cn } from "@/lib/utils";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ExcelUpload from "./steps/ExcelUpload";
+import { useAuth } from "@/context/AuthContext";
+import { useCompany } from "@/context/CompanyContext";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { extractExcelData } from "@/app/actions/bulk-import";
+
+type ErrorType = {
+  company_id: string;
+  file: string;
+};
+
+type FormType = {
+  company_id: string;
+  file: File | null;
+};
 
 function BulkImportPage() {
   const [current, setCurrent] = useState<number>(0);
+  const { user } = useAuth();
+  const { companies } = useCompany();
+
+  const [formData, setFormData] = useState<FormType>({
+    company_id: "",
+    file: null,
+  });
+  const [errors, setErrors] = useState<ErrorType>({
+    company_id: "",
+    file: "",
+  });
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // Set default company_id from user context
+  useEffect(() => {
+    if (user?.current_company) {
+      setFormData((prev) => ({ ...prev, company_id: user.current_company }));
+    }
+  }, [user]);
 
   const steps = [
     { label: "Upload Excel", step: 0 },
     { label: "Project Extraction", step: 1 },
-    { label: "Data Cleaning", step: 2 },
-    { label: "Import Data", step: 3 },
+    { label: "Task Type Mapping", step: 2 },
+    { label: "Data Cleaning", step: 3 },
+    { label: "Import Data", step: 4 },
   ];
 
-  const handleUpload = () => {};
+  const validateForm = () => {
+    const err: ErrorType = {};
+    switch (current) {
+      case 0:
+        if (!formData.company_id) err.company_id = "Company is Required";
+        if (!formData.file) err.file = "File is Required";
+        break;
+      default:
+        break;
+    }
+    setErrors(err);
+    return Object.keys(err).length === 0;
+  };
 
-  const labelMap = ["Import", "Add Projects", "Continue", "Import Data"];
+  const handleUpload = async () => {
+    if (!validateForm()) return toast.error("Missing required data");
+    const uploadForm = new FormData();
+    uploadForm.append("file", formData.file);
 
-  const actionMap = [handleUpload];
+    const result = await extractExcelData(uploadForm);
+
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+
+    console.log("result from extract", result);
+  };
+
+  const labelMap = ["Next", "Next", "Next", "Import Data"];
+  const actionMap = [handleUpload]; // Reuse or define per-step
 
   const headerActions = [
     { label: labelMap[current], onClick: actionMap[current] },
@@ -27,7 +88,22 @@ function BulkImportPage() {
   const renderBody = () => {
     switch (current) {
       case 0:
-        return <ExcelUpload />;
+        return (
+          <ExcelUpload
+            companyId={formData.company_id}
+            file={formData.file}
+            onCompanyChange={(value) => {
+              setFormData((prev) => ({ ...prev, company_id: value }));
+              setErrors((prev) => ({ ...prev, company_id: "" }));
+            }}
+            onFileChange={(file) => {
+              setFormData((prev) => ({ ...prev, file }));
+              setErrors((prev) => ({ ...prev, file: "" }));
+            }}
+            errors={errors}
+          />
+        );
+
       default:
         return null;
     }
@@ -56,7 +132,14 @@ function BulkImportPage() {
           </div>
         ))}
       </div>
-      {renderBody()}
+      {loading ? (
+        <div className="w-full flex flex-col items-center gap-2">
+          <Skeleton className="w-full h-40" />
+          <Skeleton className="w-full h-20" />
+        </div>
+      ) : (
+        renderBody()
+      )}
     </div>
   );
 }

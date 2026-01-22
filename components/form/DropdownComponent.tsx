@@ -94,7 +94,7 @@ export function DropdownComponent<T extends BaseOption>({
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className=" p-0" align="start">
+          <PopoverContent className=" p-0" align="end">
             <Command > 
               <CommandInput placeholder="Search..." className="h-9" />
               <CommandList>
