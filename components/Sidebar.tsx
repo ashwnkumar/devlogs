@@ -1,16 +1,15 @@
 "use client";
 
+import { useAuth } from "@/context/AuthContext";
 import {
-  Boxes,
+  Bolt,
   BriefcaseBusiness,
-  CalendarDays,
   CheckCircle,
-  Clock,
   FolderOpen,
   LayoutDashboard,
   Logs,
   LucideIcon,
-  Settings,
+  MessageSquareMore
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,6 +22,7 @@ type SidebarItemProps = {
 
 function Sidebar() {
   const pathname = usePathname();
+  const {user} = useAuth()
   const sidebarItems: SidebarItemProps[] = [
     { label: "Dashboard", route: "/", icon: LayoutDashboard },
     // { label: "This Week", route: "/this-week", icon: CalendarDays },
@@ -30,7 +30,8 @@ function Sidebar() {
     { label: "Companies", route: "/companies", icon: BriefcaseBusiness },
     { label: "Projects", route: "/projects", icon: FolderOpen },
     { label: "Task Types", route: "/task-types", icon: CheckCircle },
-    { label: "Settings", route: "/settings?tab=profile", icon: Settings },
+    { label: "Settings", route: "/settings?tab=profile", icon: Bolt },
+    ...user?.role === "admin" ? [{ label: "Feedback", route: "/feedback", icon: MessageSquareMore }] : []
   ];
 
   const isActive = (route: string) => {

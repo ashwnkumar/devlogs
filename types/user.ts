@@ -10,6 +10,7 @@ export interface UserType {
   email: string;
   preferences: Record<string, unknown>;
   current_company: string | null;
+  role: string
 }
 
 export interface UserMetadata {

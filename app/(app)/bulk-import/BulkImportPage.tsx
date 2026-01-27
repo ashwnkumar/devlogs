@@ -8,6 +8,7 @@ import { useCompany } from "@/context/CompanyContext";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { extractExcelData } from "@/app/actions/bulk-import";
+import Preview from "./steps/Preview";
 
 type ErrorType = {
   company_id: string;
@@ -33,6 +34,9 @@ function BulkImportPage() {
     file: "",
   });
   const [loading, setLoading] = useState<boolean>(false);
+  const [projectsMap,setProjectsMap] = useState([])
+  const [taskTypesMap,setTaskTypesMap] = useState([])
+  const [extracted, setExtracted] = useState([])
 
   // Set default company_id from user context
   useEffect(() => {
@@ -43,10 +47,10 @@ function BulkImportPage() {
 
   const steps = [
     { label: "Upload Excel", step: 0 },
-    { label: "Project Extraction", step: 1 },
-    { label: "Task Type Mapping", step: 2 },
-    { label: "Data Cleaning", step: 3 },
-    { label: "Import Data", step: 4 },
+    // { label: "Project Extraction", step: 1 },
+    // { label: "Task Type Mapping", step: 2 },
+    { label: "Data Cleaning", step: 1 },
+    { label: "Import Data", step: 2 },
   ];
 
   const validateForm = () => {
@@ -67,6 +71,7 @@ function BulkImportPage() {
     if (!validateForm()) return toast.error("Missing required data");
     const uploadForm = new FormData();
     uploadForm.append("file", formData.file);
+    setLoading(true)
 
     const result = await extractExcelData(uploadForm);
 
@@ -75,7 +80,16 @@ function BulkImportPage() {
       return;
     }
 
-    console.log("result from extract", result);
+
+    setExtracted(result?.data)
+    const proj = result.meta.uniqueProjects.map(i => ({label: i, value: i}))
+    setProjectsMap(proj)
+    const tas = result.meta.uniqueTaskTypes.map(i => ({label: i, value: i}))
+    setTaskTypesMap(tas)
+    toast.success(`Extracted ${result.meta.totalRows} rows!`)
+    setLoading(false)
+    setCurrent(p => p+1)
+   
   };
 
   const labelMap = ["Next", "Next", "Next", "Import Data"];
@@ -103,6 +117,9 @@ function BulkImportPage() {
             errors={errors}
           />
         );
+
+      case 1: 
+      return <Preview data={extracted} projects={projectsMap} taskTypes={taskTypesMap} />
 
       default:
         return null;

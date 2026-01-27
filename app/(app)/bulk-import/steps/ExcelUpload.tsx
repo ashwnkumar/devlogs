@@ -22,8 +22,6 @@ function ExcelUpload({
 }: ExcelUploadProps) {
   const { companies } = useCompany();
 
-  // No local state needed; use props for controlled inputs
-  console.log("formData (from props)", { company_id: companyId, file });
 
   return (
     <div className="w-full h-full flex flex-col items-center gap-6 px-6 py-3">
