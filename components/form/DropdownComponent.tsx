@@ -115,16 +115,16 @@ export function DropdownComponent<T extends BaseOption>({
                           onValueChange?.(newValue);
                           setOpen(false);
                         }}
+                        className="w-full flex items-center justify-between"
                       >
-                        {optLabel}
                         <Check
                           className={cn(
-                            "ml-auto h-4 w-4",
                             selectedValue === optValue
                               ? "opacity-100"
                               : "opacity-0"
                           )}
                         />
+                        {optLabel}
                       </CommandItem>
                     );
                   })}

@@ -19,11 +19,11 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 function AllLogsPage() {
-  const router = useRouter()
+  const router = useRouter();
   const { taskTypes } = useGlobal();
   const { tasks, loading, addTask, editTask, deleteTask } = useTask();
   const { projects } = useProject();
-  const {companies} = useCompany()
+  const { companies } = useCompany();
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskType | null>(null);
   const [formData, setFormData] = useState({
@@ -205,17 +205,21 @@ function AllLogsPage() {
       label: "Bulk Import",
       icon: Upload,
       onClick: () => {
-        if (companies.length === 0) return toast.info('You must add at least one company first!')
-       router.push('/bulk-import')
+        if (companies.length === 0)
+          return toast.info("You must add at least one company first!");
+        router.push("/bulk-import");
       },
-      variant: "secondary"
+      variant: "secondary" as const,
     },
     {
       label: "Add",
       icon: Plus,
       onClick: () => {
-        if (projects.length === 0 || companies.length === 0) return toast.info('You must a add a company and project before you log a task!')
-        reset(); 
+        if (projects.length === 0 || companies.length === 0)
+          return toast.info(
+            "You must a add a company and project before you log a task!",
+          );
+        reset();
         setOpen(true);
       },
     },

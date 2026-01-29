@@ -134,7 +134,7 @@ function ProjectPage() {
       label: "Add",
       icon: Plus,
       onClick: () => {
-        if (projects.length === 0)
+        if (companies.length === 0)
           return toast.info("You must add a company before adding a project!");
         reset();
         setOpen(true);

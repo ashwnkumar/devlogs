@@ -3,7 +3,7 @@ import { LucideIcon } from "lucide-react";
 export type TableColumn<T extends object> = {
   label: string;
   key: keyof T | string;
-  render?: (row: T) => React.ReactNode;
+  render?: (row: T, rowIdx?: number) => React.ReactNode;
 };
 
 export type TableActions<T extends object = object> = {

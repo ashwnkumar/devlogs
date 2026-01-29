@@ -39,7 +39,7 @@ type TableComponentProps<T extends object & { id: string | number }> = {
   loading?: boolean;
   hideEdit?: boolean;
   hideDelete?: boolean;
-  disableClick?: boolean
+  disableClick?: boolean;
 };
 
 function TableComponent<T extends object & { id: string | number }>({
@@ -52,7 +52,7 @@ function TableComponent<T extends object & { id: string | number }>({
   hideDelete = false,
   onDelete,
   loading,
-  disableClick= false
+  disableClick = false,
 }: TableComponentProps<T>) {
   const router = useRouter();
   const [view, setView] = useState<boolean>(false);
@@ -128,12 +128,15 @@ function TableComponent<T extends object & { id: string | number }>({
           </TableHeader>
           <TableBody>
             {data.map((row, rowIdx) => (
-              <TableRow onClick={() => disableClick ? null : handleRowClick(row)} key={rowIdx}>
+              <TableRow
+                onClick={() => (disableClick ? null : handleRowClick(row))}
+                key={rowIdx}
+              >
                 <TableCell>{rowIdx + 1}</TableCell>
                 {columns.map((col) => (
-                  <TableCell key={String(col.key)} >
+                  <TableCell key={String(col.key)}>
                     {col.render
-                      ? col.render(row)
+                      ? col.render(row, rowIdx)
                       : String(
                           (row as Record<string, unknown>)[col.key as string] ??
                             "",
@@ -171,7 +174,7 @@ function TableComponent<T extends object & { id: string | number }>({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => onEdit(row, rowIdx)}
+                        onClick={() => onEdit(row, String(rowIdx))}
                         title="Edit"
                       >
                         <Edit className="h-4 w-4" />
@@ -182,7 +185,7 @@ function TableComponent<T extends object & { id: string | number }>({
                       <Button
                         variant="destructive"
                         size="icon"
-                        onClick={() => onDelete(row, rowIdx)}
+                        onClick={() => onDelete(row, String(rowIdx))}
                         title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -211,7 +214,7 @@ function TableComponent<T extends object & { id: string | number }>({
                 <p className="font-medium text-sm">{col.label}:</p>
                 <p className="text-lg font-light">
                   {col.render
-                    ? col.render(selected as T)
+                    ? col.render(selected as T, 0)
                     : String(
                         (selected as Record<string, unknown>)[
                           col.key as string
