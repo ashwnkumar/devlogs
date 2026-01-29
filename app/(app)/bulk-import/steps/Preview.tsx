@@ -17,6 +17,12 @@ import { TaskTypeType } from "@/types/user";
 import { TimePickerInput } from "@/components/form/TimePickerInput";
 import { TableColumn } from "@/types/table";
 import { ArrowRight } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 type Props = {
   data: ExtractedWorkLog[];
@@ -189,12 +195,39 @@ function Preview({
     {
       label: "Date",
       key: "date",
-      render: (row: ExtractedWorkLog) =>
-        row.date ? format(new Date(row.date), "dd-MM-yyyy") : "",
+      width: "160px",
+      render: (row: ExtractedWorkLog, rowIdx?: number) => (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-36 justify-start font-normal"
+              aria-label={`Date for row ${(rowIdx ?? 0) + 1}`}
+            >
+              {row.date
+                ? format(new Date(row.date), "dd-MM-yyyy")
+                : "Select date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={row.date ? new Date(row.date) : undefined}
+              onSelect={(date) => {
+                if (onRowUpdate && rowIdx !== undefined && date) {
+                  onRowUpdate(rowIdx, { date });
+                }
+              }}
+              captionLayout="dropdown"
+            />
+          </PopoverContent>
+        </Popover>
+      ),
     },
     {
       label: "Project",
       key: "projectName",
+      width: "220px",
       render: (row: ExtractedWorkLog, rowIdx?: number) => (
         <InputComponent
           className="w-52"
@@ -211,6 +244,7 @@ function Preview({
     {
       label: "Task Type",
       key: "taskType",
+      width: "180px",
       render: (row: ExtractedWorkLog, rowIdx?: number) => (
         <InputComponent
           value={row.taskType || ""}
@@ -226,6 +260,7 @@ function Preview({
     {
       label: "Description",
       key: "task",
+      width: "300px",
       render: (row: ExtractedWorkLog, rowIdx?: number) => (
         <Textarea
           value={row.task || ""}
@@ -241,6 +276,7 @@ function Preview({
     {
       label: "Start Time",
       key: "startTime",
+      width: "180px",
       render: (row: ExtractedWorkLog, rowIdx?: number) => (
         <TimePickerInput
           value={row.startTime}
@@ -258,6 +294,7 @@ function Preview({
     {
       label: "End Time",
       key: "endTime",
+      width: "180px",
       render: (row: ExtractedWorkLog, rowIdx?: number) => (
         <TimePickerInput
           value={row.endTime}
@@ -284,22 +321,6 @@ function Preview({
 
   return (
     <div className="w-full h-full flex flex-col items-center gap-4">
-      {/* ARIA live region for validation error announcements */}
-      <div
-        className="sr-only"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {validationErrors.size > 0 && (
-          <span>
-            {validationErrors.size} validation{" "}
-            {validationErrors.size === 1 ? "error" : "errors"} found. Please
-            correct the time entries before proceeding.
-          </span>
-        )}
-      </div>
-
       <div className="flex flex-col items-start gap-2 w-full border rounded p-4">
         <div className="flex items-center justify-between w-full">
           <p className="font-semibold">Filters:</p>

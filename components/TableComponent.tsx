@@ -119,7 +119,18 @@ function TableComponent<T extends object & { id: string | number }>({
             <TableRow>
               <TableHead>#</TableHead>
               {columns.map((col, colIdx) => (
-                <TableHead key={String(col.key) || colIdx}>
+                <TableHead
+                  key={String(col.key) || colIdx}
+                  style={
+                    col.width
+                      ? {
+                          width: col.width,
+                          minWidth: col.width,
+                          maxWidth: col.width,
+                        }
+                      : undefined
+                  }
+                >
                   {col.label}
                 </TableHead>
               ))}
@@ -134,7 +145,18 @@ function TableComponent<T extends object & { id: string | number }>({
               >
                 <TableCell>{rowIdx + 1}</TableCell>
                 {columns.map((col) => (
-                  <TableCell key={String(col.key)}>
+                  <TableCell
+                    key={String(col.key)}
+                    style={
+                      col.width
+                        ? {
+                            width: col.width,
+                            minWidth: col.width,
+                            maxWidth: col.width,
+                          }
+                        : undefined
+                    }
+                  >
                     {col.render
                       ? col.render(row, rowIdx)
                       : String(

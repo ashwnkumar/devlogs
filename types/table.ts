@@ -4,6 +4,7 @@ export type TableColumn<T extends object> = {
   label: string;
   key: keyof T | string;
   render?: (row: T, rowIdx?: number) => React.ReactNode;
+  width?: string; // Optional fixed width (e.g., "150px", "10rem", "20%")
 };
 
 export type TableActions<T extends object = object> = {

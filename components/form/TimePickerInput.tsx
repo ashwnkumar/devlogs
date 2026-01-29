@@ -93,7 +93,6 @@ export function TimePickerInput({
           disabled={disabled}
           aria-label={label || "Time input"}
           aria-invalid={hasError}
-          aria-describedby={hasError ? "time-input-error" : undefined}
           className={cn(
             "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm",
             "ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium",
@@ -120,19 +119,6 @@ export function TimePickerInput({
           </Tooltip>
         )}
       </div>
-
-      {/* Error message */}
-      {error && (
-        <p
-          id="time-input-error"
-          className="text-sm text-destructive flex items-center gap-1 mt-1"
-          role="alert"
-          aria-live="polite"
-        >
-          <AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
-          {error}
-        </p>
-      )}
     </div>
   );
 }

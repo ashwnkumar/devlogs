@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import React, { useState, useEffect, useCallback } from "react";
 import ExcelUpload from "./steps/ExcelUpload";
 import { useAuth } from "@/context/AuthContext";
-import { useCompany } from "@/context/CompanyContext";
 import { useGlobal } from "@/context/GlobalContext";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,7 +26,6 @@ function BulkImportPage() {
   const [current, setCurrent] = useState<number>(0);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { user } = useAuth();
-  const { companies } = useCompany();
   const { taskTypes } = useGlobal();
 
   const [formData, setFormData] = useState<FormType>({
@@ -80,6 +78,9 @@ function BulkImportPage() {
       if (fullRow.startTime && fullRow.endTime) {
         if (fullRow.startTime >= fullRow.endTime) {
           errors.set(rowIndex, "Start time must be before end time");
+          toast.error(
+            `Row ${rowIndex + 1}: Start time must be before end time`,
+          );
         } else {
           errors.delete(rowIndex);
         }
@@ -263,11 +264,10 @@ function BulkImportPage() {
   const actionMap = [handleUpload, handleProceedToImport]; // Reuse or define per-step
 
   const headerActions = [
-  
     {
       label: "How It Works",
       icon: Info,
-      variant: "outline",
+      variant: "outline" as const,
       onClick: () => setTutorialOpen(true),
     },
     { label: labelMap[current], onClick: actionMap[current] },
