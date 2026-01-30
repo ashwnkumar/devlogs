@@ -106,6 +106,11 @@ function BulkImportPage() {
       });
       setHasUnsavedChanges(true);
       validateRow(rowIndex, updatedRow);
+
+      // Show success toast for specific field updates
+      if (updatedRow.date) {
+        toast.success(`Date updated for row ${rowIndex + 1}`);
+      }
     },
     [validateRow],
   );
@@ -113,6 +118,10 @@ function BulkImportPage() {
   // Bulk replace project names
   const handleBulkReplaceProject = useCallback(
     (oldName: string, newName: string) => {
+      const affectedRows = extractedData.filter(
+        (row) => row.projectName === oldName,
+      ).length;
+
       setExtractedData((prev) =>
         prev.map((row) =>
           row.projectName === oldName ? { ...row, projectName: newName } : row,
@@ -130,13 +139,21 @@ function BulkImportPage() {
         }
         return filtered;
       });
+
+      toast.success(
+        `Project renamed: "${oldName}" → "${newName}" (${affectedRows} ${affectedRows === 1 ? "row" : "rows"})`,
+      );
     },
-    [],
+    [extractedData],
   );
 
   // Bulk replace task types
   const handleBulkReplaceTaskType = useCallback(
     (oldType: string, newType: string) => {
+      const affectedRows = extractedData.filter(
+        (row) => row.taskType === oldType,
+      ).length;
+
       setExtractedData((prev) =>
         prev.map((row) =>
           row.taskType === oldType ? { ...row, taskType: newType } : row,
@@ -154,8 +171,12 @@ function BulkImportPage() {
         }
         return filtered;
       });
+
+      toast.success(
+        `Task type updated: "${oldType}" → "${newType}" (${affectedRows} ${affectedRows === 1 ? "row" : "rows"})`,
+      );
     },
-    [],
+    [extractedData],
   );
 
   // Reset all changes
@@ -188,6 +209,7 @@ function BulkImportPage() {
   const handleDeleteRow = useCallback((rowIndex: number) => {
     setExtractedData((prev) => prev.filter((_, idx) => idx !== rowIndex));
     setHasUnsavedChanges(true);
+    toast.info(`Row ${rowIndex + 1} deleted`);
   }, []);
 
   const steps = [
@@ -221,11 +243,13 @@ function BulkImportPage() {
     const uploadForm = new FormData();
     uploadForm.append("file", formData.file);
     setLoading(true);
+    toast.loading("Processing Excel file...", { id: "excel-upload" });
 
     const result = await extractExcelData(uploadForm);
 
     if (!result.success) {
-      toast.error(result.error);
+      toast.error(result.error, { id: "excel-upload" });
+      setLoading(false);
       return;
     }
 
@@ -242,7 +266,10 @@ function BulkImportPage() {
       value: i,
     }));
     setTaskTypesMap(tas);
-    toast.success(`Extracted ${result.meta.totalRows} rows!`);
+    toast.success(
+      `Successfully extracted ${result.meta.totalRows} rows from Excel file!`,
+      { id: "excel-upload" },
+    );
     setLoading(false);
     setCurrent((p) => p + 1);
   };
@@ -256,6 +283,16 @@ function BulkImportPage() {
       );
       return;
     }
+
+    // Check if there's any data to import
+    if (extractedData.length === 0) {
+      toast.error("No data to import. Please upload a file with data.");
+      return;
+    }
+
+    toast.success(
+      `Data validated successfully! Ready to import ${extractedData.length} ${extractedData.length === 1 ? "row" : "rows"}.`,
+    );
     // Proceed to next step
     setCurrent((p) => p + 1);
   };
@@ -296,6 +333,7 @@ function BulkImportPage() {
         return (
           <Preview
             data={extractedData}
+            company_id={formData.company_id}
             projects={projectsMap}
             taskTypes={taskTypesMap}
             systemTaskTypes={taskTypes}

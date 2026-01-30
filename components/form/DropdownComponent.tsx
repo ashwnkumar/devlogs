@@ -76,7 +76,7 @@ export function DropdownComponent<T extends BaseOption>({
       )}
 
       <div className="relative">
-        <Popover open={open} onOpenChange={setOpen} >
+        <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -85,17 +85,22 @@ export function DropdownComponent<T extends BaseOption>({
               className={cn(
                 "w-full justify-between",
                 hasError &&
-                  "border-destructive focus-visible:ring-destructive focus-visible:ring-2 focus-visible:ring-offset-2",
-                !hasError && "focus-visible:ring-ring"
+                  "border-destructive relative focus-visible:ring-destructive focus-visible:ring-2 focus-visible:ring-offset-2",
+                !hasError && "focus-visible:ring-ring",
               )}
             >
+              <span className="truncate  text-start w-[85%]">
+
               {displayText}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </span>
+              <div className="absolute right-2 bg-background">
+                <ChevronsUpDown className="shrink-0 opacity-50" />
+              </div>
             </Button>
           </PopoverTrigger>
 
           <PopoverContent className=" p-0" align="end">
-            <Command > 
+            <Command>
               <CommandInput placeholder="Search..." className="h-9" />
               <CommandList>
                 <CommandEmpty>No option found.</CommandEmpty>
@@ -121,7 +126,7 @@ export function DropdownComponent<T extends BaseOption>({
                           className={cn(
                             selectedValue === optValue
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                         {optLabel}
@@ -135,7 +140,6 @@ export function DropdownComponent<T extends BaseOption>({
                       <CommandItem
                         onSelect={() => {
                           // You can handle "add new" logic here (e.g. open modal, call callback, etc.)
-                          
                         }}
                       >
                         <Plus className="mr-2 h-4 w-4" />

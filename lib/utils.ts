@@ -1,15 +1,15 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 type DateFormat = "date" | "date-time" | "time";
 
 export function formatDate(
   isoDate: string | null | undefined,
-  format: DateFormat = "date-time"
+  format: DateFormat = "date-time",
 ): string {
   if (!isoDate) return "-";
 
@@ -38,4 +38,3 @@ export function formatDate(
     return "-";
   }
 }
-

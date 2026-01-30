@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import { DropdownComponent } from "@/components/form/DropdownComponent";
 import TableComponent from "@/components/TableComponent";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import InputComponent from "@/components/form/InputComponent";
 import { Textarea } from "@/components/ui/textarea";
 import { ExtractedWorkLog } from "@/app/actions/bulk-import";
@@ -44,6 +45,7 @@ type Props = {
 
 function Preview({
   data,
+  company_id,
   projects,
   taskTypes,
   systemTaskTypes = [],
@@ -55,55 +57,21 @@ function Preview({
   onResetChanges,
   onDeleteRow,
 }: Props) {
+  const router = useRouter();
   const [tableData, setTableData] = useState<ExtractedWorkLog[]>([]);
   const [showEmpty, setShowEmpty] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [selectedTaskType, setSelectedTaskType] = useState<string>("");
+  const [isImporting, setIsImporting] = useState(false);
 
   // Bulk edit inline state
   const [bulkEditProjectName, setBulkEditProjectName] = useState<string>("");
   const [bulkEditTaskType, setBulkEditTaskType] = useState<string>("");
 
-  // Store pending updates for debouncing
-  const pendingUpdatesRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-
   useEffect(() => {
     if (!data) return;
     setTableData(data);
   }, [data]);
-
-  // Cleanup pending timeouts on unmount
-  useEffect(() => {
-    const pendingUpdates = pendingUpdatesRef.current;
-    return () => {
-      pendingUpdates.forEach((timeout) => clearTimeout(timeout));
-      pendingUpdates.clear();
-    };
-  }, []);
-
-  // Debounced update handler for text inputs (100ms delay)
-  const handleDebouncedTextUpdate = useCallback(
-    (rowIndex: number, field: keyof ExtractedWorkLog, value: string) => {
-      const key = `${rowIndex}-${field}`;
-
-      // Clear existing timeout for this field
-      const existingTimeout = pendingUpdatesRef.current.get(key);
-      if (existingTimeout) {
-        clearTimeout(existingTimeout);
-      }
-
-      // Set new timeout
-      const timeout = setTimeout(() => {
-        if (onRowUpdate) {
-          onRowUpdate(rowIndex, { [field]: value });
-        }
-        pendingUpdatesRef.current.delete(key);
-      }, 100);
-
-      pendingUpdatesRef.current.set(key, timeout);
-    },
-    [onRowUpdate],
-  );
 
   const handleDeleteRow = useCallback(
     (row: ExtractedWorkLog & { id: string | number }) => {
@@ -111,7 +79,7 @@ function Preview({
       const rowIndex = data.findIndex((r) => r.rowNumber === row.rowNumber);
       if (rowIndex !== -1 && onDeleteRow) {
         onDeleteRow(rowIndex);
-        toast.info("Removed Task");
+        // Toast is handled in parent component
       }
     },
     [data, onDeleteRow],
@@ -160,16 +128,11 @@ function Preview({
 
     if (onBulkReplaceProject) {
       onBulkReplaceProject(selectedProject, bulkEditProjectName.trim());
-      toast.success(`Updated ${filteredData.length} rows`);
+      // Toast is handled in parent component
       setBulkEditProjectName("");
       setSelectedProject("");
     }
-  }, [
-    selectedProject,
-    bulkEditProjectName,
-    onBulkReplaceProject,
-    filteredData.length,
-  ]);
+  }, [selectedProject, bulkEditProjectName, onBulkReplaceProject]);
 
   // Handle bulk edit task type
   const handleApplyBulkEditTaskType = useCallback(() => {
@@ -180,16 +143,103 @@ function Preview({
 
     if (onBulkReplaceTaskType) {
       onBulkReplaceTaskType(selectedTaskType, bulkEditTaskType);
-      toast.success(`Updated ${filteredData.length} rows`);
+      // Toast is handled in parent component
       setBulkEditTaskType("");
       setSelectedTaskType("");
     }
-  }, [
-    selectedTaskType,
-    bulkEditTaskType,
-    onBulkReplaceTaskType,
-    filteredData.length,
-  ]);
+  }, [selectedTaskType, bulkEditTaskType, onBulkReplaceTaskType]);
+
+  // Handle import to API
+  const handleImport = useCallback(async () => {
+    // Validate company_id is present
+    if (!company_id) {
+      toast.error("Company ID is required for import");
+      return;
+    }
+
+    // Validate there's data to import
+    if (!data || data.length === 0) {
+      toast.error("No data to import");
+      return;
+    }
+
+    // Check for validation errors
+    if (validationErrors.size > 0) {
+      toast.error(
+        `Cannot import: ${validationErrors.size} validation error${validationErrors.size > 1 ? "s" : ""} found`,
+      );
+      return;
+    }
+
+    setIsImporting(true);
+    const toastId = toast.loading("Importing tasks...");
+
+    try {
+      // Call the bulk import API
+      const response = await fetch("/api/bulk-import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tasks: data,
+          company_id: company_id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors
+        if (result.validationErrors && result.validationErrors.length > 0) {
+          const errorMessages = result.validationErrors
+            .slice(0, 3)
+            .map(
+              (err: any) =>
+                `Row ${err.rowNumber}: ${err.field} - ${err.message}`,
+            )
+            .join("\n");
+
+          const moreErrors =
+            result.validationErrors.length > 3
+              ? `\n...and ${result.validationErrors.length - 3} more errors`
+              : "";
+
+          toast.error(`Validation failed:\n${errorMessages}${moreErrors}`, {
+            id: toastId,
+            duration: 6000,
+          });
+        } else {
+          // Handle other errors
+          toast.error(result.error || "Import failed", { id: toastId });
+        }
+        return;
+      }
+
+      // Success! Show summary and redirect
+      const { data: importData, message } = result;
+      toast.success(
+        `${message}\n• Projects created: ${importData.projectsCreated}\n• Projects reused: ${importData.projectsReused}\n• Task types created: ${importData.taskTypesCreated}`,
+        {
+          id: toastId,
+          duration: 5000,
+        },
+      );
+
+      // Redirect to projects page after a short delay
+      setTimeout(() => {
+        router.push("/projects");
+      }, 1500);
+    } catch (error) {
+      console.error("Import error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to import tasks",
+        { id: toastId },
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  }, [data, company_id, validationErrors, router]);
 
   const columns: TableColumn<ExtractedWorkLog & { id: string | number }>[] = [
     {
@@ -233,8 +283,8 @@ function Preview({
           className="w-52"
           value={row.projectName || ""}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (rowIdx !== undefined) {
-              handleDebouncedTextUpdate(rowIdx, "projectName", e.target.value);
+            if (onRowUpdate && rowIdx !== undefined) {
+              onRowUpdate(rowIdx, { projectName: e.target.value });
             }
           }}
           aria-label={`Project name for row ${(rowIdx ?? 0) + 1}`}
@@ -246,13 +296,18 @@ function Preview({
       key: "taskType",
       width: "180px",
       render: (row: ExtractedWorkLog, rowIdx?: number) => (
-        <InputComponent
+        <DropdownComponent
+          options={systemTaskTypes.map((t) => ({
+            label: t.name,
+            value: t.name,
+          }))}
           value={row.taskType || ""}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (rowIdx !== undefined) {
-              handleDebouncedTextUpdate(rowIdx, "taskType", e.target.value);
+          onValueChange={(value) => {
+            if (onRowUpdate && rowIdx !== undefined) {
+              onRowUpdate(rowIdx, { taskType: value });
             }
           }}
+          placeholder={row.taskType || "Select task type"}
           aria-label={`Task type for row ${(rowIdx ?? 0) + 1}`}
         />
       ),
@@ -265,8 +320,8 @@ function Preview({
         <Textarea
           value={row.task || ""}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-            if (rowIdx !== undefined) {
-              handleDebouncedTextUpdate(rowIdx, "task", e.target.value);
+            if (onRowUpdate && rowIdx !== undefined) {
+              onRowUpdate(rowIdx, { task: e.target.value });
             }
           }}
           aria-label={`Description for row ${(rowIdx ?? 0) + 1}`}
@@ -321,6 +376,24 @@ function Preview({
 
   return (
     <div className="w-full h-full flex flex-col items-center gap-4">
+      {/* Import Button Section */}
+      <div className="w-full flex justify-end">
+        <Button
+          onClick={handleImport}
+          disabled={
+            isImporting ||
+            validationErrors.size > 0 ||
+            !data ||
+            data.length === 0
+          }
+          className="flex items-center gap-2"
+          size="lg"
+        >
+          <Upload className="h-4 w-4" />
+          {isImporting ? "Importing..." : "Import Tasks"}
+        </Button>
+      </div>
+
       <div className="flex flex-col items-start gap-2 w-full border rounded p-4">
         <div className="flex items-center justify-between w-full">
           <p className="font-semibold">Filters:</p>
