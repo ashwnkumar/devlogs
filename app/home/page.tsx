@@ -123,7 +123,7 @@ export default function Home() {
       </section>
 
       {/* Quick Features Grid */}
-      <section className="py-20 md:py-28 bg-muted/30">
+      <section className="py-20 md:py-28 bg-muted flex items-center justify-center">
         <div className="container px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 text-foreground">
             Built for developers who want clarity
@@ -166,7 +166,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 md:py-32 bg-linear-to-br from-primary/5 to-background text-center">
+      <section className="py-20 md:py-32 bg-linear-to-br from-primary/5 to-background text-center flex items-center justify-center">
         <div className="container px-6">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground">
             Start building better habits today

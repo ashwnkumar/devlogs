@@ -24,10 +24,17 @@ function ChecklistCard() {
     <Accordion type="single" collapsible className="my-4">
       <AccordionItem value="item-1">
         <AccordionTrigger className="bg-primary/20 text-primary font-semibold text-md px-4">
-          Checklist ({done}/{total})
+          Getting Started Checklist ({done}/{total})
         </AccordionTrigger>
+
         <AccordionContent className=" px-4 py-3 rounded-lg bg-accent/50 h-full">
-        <p className="font-semibold">Complete these steps to start using your app smoothly</p>
+          <p className="font-semibold">
+            Finish the steps below to get your app fully set up.
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            You can complete these anytime—each step unlocks more features.
+          </p>
+
           {checklist.map((item, idx) => (
             <div
               onClick={() => {
