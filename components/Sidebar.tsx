@@ -9,7 +9,7 @@ import {
   LayoutDashboard,
   Logs,
   LucideIcon,
-  MessageSquareMore
+  MessageSquareMore,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -22,7 +22,7 @@ type SidebarItemProps = {
 
 function Sidebar() {
   const pathname = usePathname();
-  const {user} = useAuth()
+  const { user } = useAuth();
   const sidebarItems: SidebarItemProps[] = [
     { label: "Dashboard", route: "/", icon: LayoutDashboard },
     // { label: "This Week", route: "/this-week", icon: CalendarDays },
@@ -31,7 +31,9 @@ function Sidebar() {
     { label: "Projects", route: "/projects", icon: FolderOpen },
     { label: "Task Types", route: "/task-types", icon: CheckCircle },
     { label: "Settings", route: "/settings?tab=profile", icon: Bolt },
-    ...user?.role === "admin" ? [{ label: "Feedback", route: "/feedback", icon: MessageSquareMore }] : []
+    ...(user?.role === "admin"
+      ? [{ label: "Feedback", route: "/feedback", icon: MessageSquareMore }]
+      : []),
   ];
 
   const isActive = (route: string) => {
@@ -40,15 +42,14 @@ function Sidebar() {
     return false;
   };
 
-
   return (
-    <div className="border-r w-full h-full p-4 flex flex-col justify-start gap-2">
+    <div className="h-full w-full p-4 flex flex-col gap-2 overflow-hidden">
       {sidebarItems.map((item, idx) => (
         <Link
           key={idx}
           href={item.route}
           className={`flex items-center gap-3 py-2 px-3 rounded transition-colors ${
-            isActive(item.route) 
+            isActive(item.route)
               ? "bg-primary/10 text-primary  font-medium"
               : "hover:bg-foreground/10"
           }`}

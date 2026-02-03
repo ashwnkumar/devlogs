@@ -59,7 +59,7 @@ export function DropdownComponent<T extends BaseOption>({
   const selectedValue = value != null ? String(value) : "";
 
   const selectedOption = options?.find(
-    (opt) => String(opt[valueKey]) === selectedValue
+    (opt) => String(opt[valueKey]) === selectedValue,
   );
 
   const displayText = selectedOption
@@ -90,8 +90,7 @@ export function DropdownComponent<T extends BaseOption>({
               )}
             >
               <span className="truncate  text-start w-[85%]">
-
-              {displayText}
+                {displayText}
               </span>
               <div className="absolute right-2 bg-background">
                 <ChevronsUpDown className="shrink-0 opacity-50" />
