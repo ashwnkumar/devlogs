@@ -92,7 +92,7 @@ export function DropdownComponent<T extends BaseOption>({
               <span className="truncate  text-start w-[85%]">
                 {displayText}
               </span>
-              <div className="absolute right-2 bg-background">
+              <div className="absolute right-2 bg-inherit group-hover:bg-inherit">
                 <ChevronsUpDown className="shrink-0 opacity-50" />
               </div>
             </Button>

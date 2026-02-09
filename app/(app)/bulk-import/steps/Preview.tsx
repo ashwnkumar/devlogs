@@ -1,563 +1,376 @@
 "use client";
-
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { format } from "date-fns";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-
-import { DropdownComponent } from "@/components/form/DropdownComponent";
-import TableComponent from "@/components/TableComponent";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { X, Upload } from "lucide-react";
-import InputComponent from "@/components/form/InputComponent";
-import { Textarea } from "@/components/ui/textarea";
+import { useState, useMemo } from "react";
 import { ExtractedWorkLog } from "@/app/actions/bulk-import";
-import { TaskTypeType } from "@/types/user";
-import { TimePickerInput } from "@/components/form/TimePickerInput";
-import { TableColumn } from "@/types/table";
-import { ArrowRight } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { EditableTable } from "../components/EditableTable";
+import { DropdownComponent } from "@/components/form/DropdownComponent";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { X } from "lucide-react";
 
-type Props = {
+type PreviewProps = {
   data: ExtractedWorkLog[];
-  company_id?: string;
-  projects: { label: string; value: string }[];
-  taskTypes: { label: string; value: string }[];
-  systemTaskTypes?: TaskTypeType[];
-  validationErrors?: Map<number, string>;
-  hasUnsavedChanges?: boolean;
-  onRowUpdate?: (
-    rowIndex: number,
-    updatedRow: Partial<ExtractedWorkLog>,
-  ) => void;
-  onBulkReplaceProject?: (oldName: string, newName: string) => void;
-  onBulkReplaceTaskType?: (oldType: string, newType: string) => void;
-  onResetChanges?: () => void;
-  onDeleteRow?: (rowIndex: number) => void;
+  onUpdate: (updatedRow: ExtractedWorkLog, rowIndex: number) => void;
+  onDelete: (rowIndex: number) => void;
+  onBulkUpdateProject: (oldName: string, newName: string) => void;
+  uniqueProjects: string[];
+  uniqueTaskTypes: string[];
+  systemTaskTypes: { label: string; value: string }[];
 };
 
 function Preview({
   data,
-  company_id,
-  projects,
-  taskTypes,
-  systemTaskTypes = [],
-  validationErrors = new Map(),
-  hasUnsavedChanges = false,
-  onRowUpdate,
-  onBulkReplaceProject,
-  onBulkReplaceTaskType,
-  onResetChanges,
-  onDeleteRow,
-}: Props) {
-  const router = useRouter();
-  const [tableData, setTableData] = useState<ExtractedWorkLog[]>([]);
-  const [showEmpty, setShowEmpty] = useState(false);
+  onUpdate,
+  onDelete,
+  onBulkUpdateProject,
+  uniqueProjects,
+  uniqueTaskTypes,
+  systemTaskTypes,
+}: PreviewProps) {
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [selectedTaskType, setSelectedTaskType] = useState<string>("");
-  const [isImporting, setIsImporting] = useState(false);
+  const [newProjectName, setNewProjectName] = useState<string>("");
+  const [showOnlyEmpty, setShowOnlyEmpty] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Bulk edit inline state
-  const [bulkEditProjectName, setBulkEditProjectName] = useState<string>("");
-  const [bulkEditTaskType, setBulkEditTaskType] = useState<string>("");
+  // Filter data based on selected filters and keep track of original indices
+  const filteredDataWithIndices = useMemo(() => {
+    let filtered = data.map((row, originalIndex) => ({ row, originalIndex }));
 
-  useEffect(() => {
-    if (!data) return;
-    setTableData(data);
-  }, [data]);
-
-  const handleDeleteRow = useCallback(
-    (row: ExtractedWorkLog & { id: string | number }) => {
-      // Find the index in the original extractedData array
-      const rowIndex = data.findIndex((r) => r.rowNumber === row.rowNumber);
-      if (rowIndex !== -1 && onDeleteRow) {
-        onDeleteRow(rowIndex);
-        // Toast is handled in parent component
-      }
-    },
-    [data, onDeleteRow],
-  );
-
-  const handleClearFilters = useCallback(() => {
-    setSelectedProject("");
-    setSelectedTaskType("");
-    setShowEmpty(false);
-    setBulkEditProjectName("");
-    setBulkEditTaskType("");
-    toast.info("Filters cleared");
-  }, []);
-
-  const filteredData = useMemo(() => {
-    let filtered = tableData;
+    // Filter by search term (searches across all text fields)
+    if (searchTerm.trim()) {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter((item) => {
+        const { row } = item;
+        return (
+          row.projectName?.toLowerCase().includes(lowerSearch) ||
+          row.taskType?.toLowerCase().includes(lowerSearch) ||
+          row.task?.toLowerCase().includes(lowerSearch) ||
+          (row.date &&
+            new Date(row.date).toLocaleDateString().includes(lowerSearch)) ||
+          (row.startTime &&
+            new Date(row.startTime)
+              .toLocaleTimeString()
+              .includes(lowerSearch)) ||
+          (row.endTime &&
+            new Date(row.endTime).toLocaleTimeString().includes(lowerSearch))
+        );
+      });
+    }
 
     // Filter by project
     if (selectedProject) {
-      filtered = filtered.filter((row) => row.projectName === selectedProject);
+      filtered = filtered.filter(
+        (item) => item.row.projectName === selectedProject,
+      );
     }
 
     // Filter by task type
     if (selectedTaskType) {
-      filtered = filtered.filter((row) => row.taskType === selectedTaskType);
+      filtered = filtered.filter(
+        (item) => item.row.taskType === selectedTaskType,
+      );
     }
 
-    // Filter by empty rows
-    if (showEmpty) {
-      filtered = filtered.filter((row) =>
-        Object.values(row).some(
-          (value) => value === "" || value === null || value === undefined,
-        ),
-      );
+    // Filter by empty rows (rows with at least one empty field)
+    if (showOnlyEmpty) {
+      filtered = filtered.filter((item) => {
+        const { row } = item;
+        return (
+          !row.date ||
+          !row.projectName ||
+          !row.taskType ||
+          !row.task ||
+          !row.startTime ||
+          !row.endTime
+        );
+      });
     }
 
     return filtered;
-  }, [tableData, showEmpty, selectedProject, selectedTaskType]);
+  }, [data, selectedProject, selectedTaskType, showOnlyEmpty, searchTerm]);
 
-  // Handle bulk edit project name
-  const handleApplyBulkEditProject = useCallback(() => {
-    if (!selectedProject || !bulkEditProjectName.trim()) {
-      toast.error("Please enter a new project name");
+  const filteredData = filteredDataWithIndices.map((item) => item.row);
+
+  // Calculate stats based on filtered data
+  const totalRows = filteredData.length;
+  const rowsWithDate = filteredData.filter((row) => row.date).length;
+  const rowsWithProject = filteredData.filter((row) => row.projectName).length;
+  const rowsWithTaskType = filteredData.filter((row) => row.taskType).length;
+
+  // Check if any filters are active
+  const hasActiveFilters =
+    selectedProject || selectedTaskType || showOnlyEmpty || searchTerm.trim();
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedProject("");
+    setSelectedTaskType("");
+    setNewProjectName("");
+    setShowOnlyEmpty(false);
+    setSearchTerm("");
+  };
+
+  // Handle project replacement
+  const handleReplaceAllProjects = () => {
+    if (!selectedProject || !newProjectName.trim()) {
       return;
     }
+    onBulkUpdateProject(selectedProject, newProjectName.trim());
+    setNewProjectName("");
+    setSelectedProject("");
+  };
 
-    if (onBulkReplaceProject) {
-      onBulkReplaceProject(selectedProject, bulkEditProjectName.trim());
-      // Toast is handled in parent component
-      setBulkEditProjectName("");
-      setSelectedProject("");
-    }
-  }, [selectedProject, bulkEditProjectName, onBulkReplaceProject]);
+  // Count affected rows for project replacement
+  const affectedRowsCount = selectedProject
+    ? data.filter((row) => row.projectName === selectedProject).length
+    : 0;
 
-  // Handle bulk edit task type
-  const handleApplyBulkEditTaskType = useCallback(() => {
-    if (!selectedTaskType || !bulkEditTaskType) {
-      toast.error("Please select a replacement task type");
-      return;
-    }
-
-    if (onBulkReplaceTaskType) {
-      onBulkReplaceTaskType(selectedTaskType, bulkEditTaskType);
-      // Toast is handled in parent component
-      setBulkEditTaskType("");
-      setSelectedTaskType("");
-    }
-  }, [selectedTaskType, bulkEditTaskType, onBulkReplaceTaskType]);
-
-  // Handle import to API
-  const handleImport = useCallback(async () => {
-    // Validate company_id is present
-    if (!company_id) {
-      toast.error("Company ID is required for import");
-      return;
-    }
-
-    // Validate there's data to import
-    if (!data || data.length === 0) {
-      toast.error("No data to import");
-      return;
-    }
-
-    // Check for validation errors
-    if (validationErrors.size > 0) {
-      toast.error(
-        `Cannot import: ${validationErrors.size} validation error${validationErrors.size > 1 ? "s" : ""} found`,
-      );
-      return;
-    }
-
-    setIsImporting(true);
-    const toastId = toast.loading("Importing tasks...");
-
-    try {
-      // Call the bulk import API
-      const response = await fetch("/api/bulk-import", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tasks: data,
-          company_id: company_id,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        // Handle validation errors
-        if (result.validationErrors && result.validationErrors.length > 0) {
-          const errorMessages = result.validationErrors
-            .slice(0, 3)
-            .map(
-              (err: any) =>
-                `Row ${err.rowNumber}: ${err.field} - ${err.message}`,
-            )
-            .join("\n");
-
-          const moreErrors =
-            result.validationErrors.length > 3
-              ? `\n...and ${result.validationErrors.length - 3} more errors`
-              : "";
-
-          toast.error(`Validation failed:\n${errorMessages}${moreErrors}`, {
-            id: toastId,
-            duration: 6000,
-          });
-        } else {
-          // Handle other errors
-          toast.error(result.error || "Import failed", { id: toastId });
-        }
-        return;
-      }
-
-      // Success! Show summary and redirect
-      const { data: importData, message } = result;
-      toast.success(
-        `${message}\n• Projects created: ${importData.projectsCreated}\n• Projects reused: ${importData.projectsReused}\n• Task types created: ${importData.taskTypesCreated}`,
-        {
-          id: toastId,
-          duration: 5000,
-        },
-      );
-
-      // Redirect to projects page after a short delay
-      setTimeout(() => {
-        router.push("/projects");
-      }, 1500);
-    } catch (error) {
-      console.error("Import error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to import tasks",
-        { id: toastId },
-      );
-    } finally {
-      setIsImporting(false);
-    }
-  }, [data, company_id, validationErrors, router]);
-
-  const columns: TableColumn<ExtractedWorkLog & { id: string | number }>[] = [
-    {
-      label: "Date",
-      key: "date",
-      width: "160px",
-      render: (row: ExtractedWorkLog, rowIdx?: number) => (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-36 justify-start font-normal"
-              aria-label={`Date for row ${(rowIdx ?? 0) + 1}`}
-            >
-              {row.date
-                ? format(new Date(row.date), "dd-MM-yyyy")
-                : "Select date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={row.date ? new Date(row.date) : undefined}
-              onSelect={(date) => {
-                if (onRowUpdate && rowIdx !== undefined && date) {
-                  onRowUpdate(rowIdx, { date });
-                }
-              }}
-              captionLayout="dropdown"
-            />
-          </PopoverContent>
-        </Popover>
-      ),
-    },
-    {
-      label: "Project",
-      key: "projectName",
-      width: "220px",
-      render: (row: ExtractedWorkLog, rowIdx?: number) => (
-        <InputComponent
-          className="w-52"
-          value={row.projectName || ""}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (onRowUpdate && rowIdx !== undefined) {
-              onRowUpdate(rowIdx, { projectName: e.target.value });
-            }
-          }}
-          aria-label={`Project name for row ${(rowIdx ?? 0) + 1}`}
-        />
-      ),
-    },
-    {
-      label: "Task Type",
-      key: "taskType",
-      width: "180px",
-      render: (row: ExtractedWorkLog, rowIdx?: number) => (
-        <DropdownComponent
-          options={systemTaskTypes.map((t) => ({
-            label: t.name,
-            value: t.name,
-          }))}
-          value={row.taskType || ""}
-          onValueChange={(value) => {
-            if (onRowUpdate && rowIdx !== undefined) {
-              onRowUpdate(rowIdx, { taskType: value });
-            }
-          }}
-          placeholder={row.taskType || "Select task type"}
-          aria-label={`Task type for row ${(rowIdx ?? 0) + 1}`}
-        />
-      ),
-    },
-    {
-      label: "Description",
-      key: "task",
-      width: "300px",
-      render: (row: ExtractedWorkLog, rowIdx?: number) => (
-        <Textarea
-          value={row.task || ""}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-            if (onRowUpdate && rowIdx !== undefined) {
-              onRowUpdate(rowIdx, { task: e.target.value });
-            }
-          }}
-          aria-label={`Description for row ${(rowIdx ?? 0) + 1}`}
-        />
-      ),
-    },
-    {
-      label: "Start Time",
-      key: "startTime",
-      width: "180px",
-      render: (row: ExtractedWorkLog, rowIdx?: number) => (
-        <TimePickerInput
-          value={row.startTime}
-          onChange={(newTime) => {
-            if (onRowUpdate && rowIdx !== undefined) {
-              onRowUpdate(rowIdx, { startTime: newTime });
-            }
-          }}
-          error={
-            rowIdx !== undefined ? validationErrors.get(rowIdx) : undefined
-          }
-        />
-      ),
-    },
-    {
-      label: "End Time",
-      key: "endTime",
-      width: "180px",
-      render: (row: ExtractedWorkLog, rowIdx?: number) => (
-        <TimePickerInput
-          value={row.endTime}
-          onChange={(newTime) => {
-            if (onRowUpdate && rowIdx !== undefined) {
-              onRowUpdate(rowIdx, { endTime: newTime });
-            }
-          }}
-          error={
-            rowIdx !== undefined ? validationErrors.get(rowIdx) : undefined
-          }
-        />
-      ),
-    },
-  ];
-
-  // Add id field to data for TableComponent compatibility
-  const tableDataWithIds = useMemo(() => {
-    return filteredData.map((row, idx) => ({
-      ...row,
-      id: row.rowNumber || idx,
-    }));
-  }, [filteredData]);
+  // Convert unique values to dropdown options
+  const projectOptions = uniqueProjects.map((p) => ({ label: p, value: p }));
+  const taskTypeOptions = uniqueTaskTypes.map((t) => ({ label: t, value: t }));
 
   return (
-    <div className="w-full h-full flex flex-col items-center gap-4">
-      {/* Import Button Section */}
-      <div className="w-full flex justify-end">
-        <Button
-          onClick={handleImport}
-          disabled={
-            isImporting ||
-            validationErrors.size > 0 ||
-            !data ||
-            data.length === 0
-          }
-          className="flex items-center gap-2"
-          size="lg"
-        >
-          <Upload className="h-4 w-4" />
-          {isImporting ? "Importing..." : "Import Tasks"}
-        </Button>
+    <div className="w-full h-full flex flex-col gap-4 px-6 py-3">
+      {/* Info Banner */}
+      <div className="rounded-lg border bg-muted/50 p-3">
+        <p className="text-sm text-muted-foreground">
+          💡 <span className="font-medium text-foreground">Tip:</span> Click on
+          any cell to edit it directly. Press{" "}
+          <kbd className="px-1.5 py-0.5 text-xs bg-background border rounded">
+            Enter
+          </kbd>{" "}
+          to save or{" "}
+          <kbd className="px-1.5 py-0.5 text-xs bg-background border rounded">
+            Esc
+          </kbd>{" "}
+          to cancel.
+        </p>
       </div>
 
-      <div className="flex flex-col items-start gap-2 w-full border rounded p-4">
-        <div className="flex items-center justify-between w-full">
-          <p className="font-semibold">Filters:</p>
-          <div className="flex items-center gap-2">
-            {hasUnsavedChanges && onResetChanges && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onResetChanges}
-                aria-label="Reset all changes to original data"
-              >
-                Reset All Changes
-              </Button>
-            )}
+      {/* Filters Section */}
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold">Filters</h3>
+          {hasActiveFilters && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={handleClearFilters}
-              className="flex items-center gap-2"
-              aria-label="Clear all filters"
+              onClick={clearFilters}
+              className="h-8 text-xs"
             >
-              <X className="h-4 w-4" aria-hidden="true" />
-              Clear Filters
+              <X className="h-3 w-3 mr-1" />
+              Clear All
             </Button>
-          </div>
+          )}
         </div>
-
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <DropdownComponent
+              label="Project"
+              options={projectOptions}
+              value={selectedProject}
+              onValueChange={(value) => {
+                setSelectedProject(value);
+                setNewProjectName("");
+              }}
+              placeholder="All Projects"
+              className="w-full"
+            />
+            {selectedProject && (
+              <div className="space-y-2 p-3 rounded-md bg-muted/50 border">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Replace &quot;{selectedProject}&quot;
+                </p>
+                <input
+                  type="text"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  placeholder="Enter new project name"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {affectedRowsCount}{" "}
+                    {affectedRowsCount === 1 ? "row" : "rows"}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={handleReplaceAllProjects}
+                    disabled={!newProjectName.trim()}
+                    className="h-8"
+                  >
+                    Replace All
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
           <DropdownComponent
-            options={projects}
-            label="Projects"
-            value={selectedProject}
-            onValueChange={setSelectedProject}
-            placeholder="All Projects"
-          />
-          <DropdownComponent
-            options={taskTypes}
-            label="Task Types"
+            label="Task Type"
+            options={taskTypeOptions}
             value={selectedTaskType}
             onValueChange={setSelectedTaskType}
             placeholder="All Task Types"
+            className="w-full"
           />
-
-          <div className="flex flex-col items-start gap-3">
-            <p className="text-sm font-medium">Empty Rows:</p>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="empty"
-                checked={showEmpty}
-                onCheckedChange={setShowEmpty}
+          {/* Search Bar */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Search</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search all fields..."
+                className="w-full rounded-md border border-input bg-background pl-9 pr-9 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               />
-              <Label htmlFor="empty">Show only empty rows</Label>
+              <svg
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          {/* Show Only Empty Rows Toggle */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Data Quality</label>
+            <div className="flex items-center space-x-2 h-10 px-3 rounded-md border border-input bg-background">
+              <Checkbox
+                id="show-empty"
+                checked={showOnlyEmpty}
+                onCheckedChange={(checked) =>
+                  setShowOnlyEmpty(checked === true)
+                }
+              />
+              <label
+                htmlFor="show-empty"
+                className="text-sm cursor-pointer select-none"
+              >
+                Show only incomplete rows
+              </label>
             </div>
           </div>
         </div>
-
-        {/* Inline Bulk Edit Section */}
-        {(selectedProject || selectedTaskType) && (
-          <div className="w-full mt-4 pt-4 border-t">
-            <p className="text-sm font-semibold mb-3 text-muted-foreground">
-              Bulk Edit Active Filters
-            </p>
-
-            <div className="space-y-3">
-              {/* Project Bulk Edit */}
-              {selectedProject && (
-                <div className="flex flex-col gap-2 p-3 bg-accent/50 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Project:</span>
-                      <span className="text-sm px-2 py-0.5 bg-background rounded border">
-                        {selectedProject}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({filteredData.length}{" "}
-                        {filteredData.length === 1 ? "row" : "rows"})
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    <InputComponent
-                      placeholder="Enter new project name"
-                      value={bulkEditProjectName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setBulkEditProjectName(e.target.value)
-                      }
-                      className="flex-1"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleApplyBulkEditProject}
-                      disabled={!bulkEditProjectName.trim()}
-                    >
-                      Rename {filteredData.length}{" "}
-                      {filteredData.length === 1 ? "row" : "rows"}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Task Type Bulk Edit */}
-              {selectedTaskType && (
-                <div className="flex flex-col gap-2 p-3 bg-accent/50 rounded-md">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Task Type:</span>
-                      <span className="text-sm px-2 py-0.5 bg-background rounded border">
-                        {selectedTaskType}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({filteredData.length}{" "}
-                        {filteredData.length === 1 ? "row" : "rows"})
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    <DropdownComponent
-                      options={systemTaskTypes.map((t) => ({
-                        label: t.name,
-                        value: t.name,
-                      }))}
-                      placeholder="Select replacement task type"
-                      value={bulkEditTaskType}
-                      onValueChange={setBulkEditTaskType}
-                      className="flex-1"
-                    />
-                    {bulkEditTaskType && (
-                      <div
-                        className="w-6 h-6 rounded border"
-                        style={{
-                          backgroundColor:
-                            systemTaskTypes.find(
-                              (t) => t.name === bulkEditTaskType,
-                            )?.color || "#000",
-                        }}
-                        title={`Color for ${bulkEditTaskType}`}
-                      />
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={handleApplyBulkEditTaskType}
-                      disabled={!bulkEditTaskType}
-                    >
-                      Update {filteredData.length}{" "}
-                      {filteredData.length === 1 ? "row" : "rows"}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
+        {hasActiveFilters && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+            <span>Active filters:</span>
+            {searchTerm.trim() && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary">
+                Search: &quot;{searchTerm}&quot;
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-primary/80"
+                  onClick={() => setSearchTerm("")}
+                />
+              </span>
+            )}
+            {selectedProject && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary">
+                Project: {selectedProject}
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-primary/80"
+                  onClick={() => {
+                    setSelectedProject("");
+                    setNewProjectName("");
+                  }}
+                />
+              </span>
+            )}
+            {selectedTaskType && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary">
+                Task Type: {selectedTaskType}
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-primary/80"
+                  onClick={() => setSelectedTaskType("")}
+                />
+              </span>
+            )}
+            {showOnlyEmpty && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary">
+                Incomplete rows only
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-primary/80"
+                  onClick={() => setShowOnlyEmpty(false)}
+                />
+              </span>
+            )}
           </div>
         )}
       </div>
 
-      <TableComponent
-        data={tableDataWithIds}
-        columns={columns}
-        disableClick
-        hideEdit
-        onEdit={() => {}}
-        onDelete={handleDeleteRow}
-      />
+      {/* Summary Card */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            {hasActiveFilters ? "Filtered Rows" : "Total Rows"}
+          </p>
+          <p className="text-2xl font-bold">
+            {totalRows}
+            {hasActiveFilters && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                / {data.length}
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-sm text-muted-foreground">With Date</p>
+          <p className="text-2xl font-bold">{rowsWithDate}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-sm text-muted-foreground">With Project</p>
+          <p className="text-2xl font-bold">{rowsWithProject}</p>
+        </div>
+        <div className="rounded-lg border bg-card p-4">
+          <p className="text-sm text-muted-foreground">With Task Type</p>
+          <p className="text-2xl font-bold">{rowsWithTaskType}</p>
+        </div>
+      </div>
+
+      {/* Editable Data Table */}
+      <div className="w-full rounded-lg border bg-card overflow-auto">
+        <EditableTable
+          data={filteredData}
+          onUpdate={(updatedRow, displayIndex) => {
+            // Map display index to original index
+            const originalIndex =
+              filteredDataWithIndices[displayIndex].originalIndex;
+            onUpdate(updatedRow, originalIndex);
+          }}
+          onDelete={(displayIndex) => {
+            // Map display index to original index
+            const originalIndex =
+              filteredDataWithIndices[displayIndex].originalIndex;
+            onDelete(originalIndex);
+          }}
+          onBulkDelete={(displayIndices) => {
+            // Map display indices to original indices
+            const originalIndices = displayIndices.map(
+              (displayIndex) =>
+                filteredDataWithIndices[displayIndex].originalIndex,
+            );
+            // Sort in descending order to delete from end to start
+            const sortedIndices = originalIndices.sort((a, b) => b - a);
+            sortedIndices.forEach((originalIndex) => onDelete(originalIndex));
+          }}
+          systemTaskTypes={systemTaskTypes}
+        />
+      </div>
     </div>
   );
 }

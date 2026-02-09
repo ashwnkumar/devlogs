@@ -1,7 +1,7 @@
 "use client";
 import PageHeader from "@/components/PageHeader";
 import { cn } from "@/lib/utils";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import ExcelUpload from "./steps/ExcelUpload";
 import { useAuth } from "@/context/AuthContext";
 import { useGlobal } from "@/context/GlobalContext";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { extractExcelData, ExtractedWorkLog } from "@/app/actions/bulk-import";
 import Preview from "./steps/Preview";
+import ImportData from "./steps/ImportData";
 import { BulkImportTutorial } from "@/components/BulkImportTutorial";
 import { Info } from "lucide-react";
 
@@ -50,13 +51,30 @@ function BulkImportPage() {
   // Original data backup for reset functionality
   const [originalData, setOriginalData] = useState<ExtractedWorkLog[]>([]);
 
-  // Validation errors: Map<rowIndex, errorMessage>
-  const [validationErrors, setValidationErrors] = useState<Map<number, string>>(
-    new Map(),
-  );
-
   // Track if data has been modified
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Import state management
+  const [importStatus, setImportStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [importResult, setImportResult] = useState<{
+    projectsCreated: number;
+    projectsReused: number;
+    taskTypesCreated: number;
+    tasksCreated: number;
+    projects: Array<{ id: string; name: string }>;
+  } | null>(null);
+  const [importErrorMessage, setImportErrorMessage] = useState<string | null>(
+    null,
+  );
+  const [importValidationErrors, setImportValidationErrors] = useState<
+    Array<{
+      rowNumber: number;
+      field: string;
+      message: string;
+    }>
+  >([]);
 
   // Set default company_id from user context
   useEffect(() => {
@@ -69,154 +87,9 @@ function BulkImportPage() {
     }
   }, [user]);
 
-  // Validate a single row
-  const validateRow = useCallback(
-    (rowIndex: number, updatedRow: Partial<ExtractedWorkLog>) => {
-      const fullRow = { ...extractedData[rowIndex], ...updatedRow };
-      const errors = new Map(validationErrors);
-
-      if (fullRow.startTime && fullRow.endTime) {
-        if (fullRow.startTime >= fullRow.endTime) {
-          errors.set(rowIndex, "Start time must be before end time");
-          toast.error(
-            `Row ${rowIndex + 1}: Start time must be before end time`,
-          );
-        } else {
-          errors.delete(rowIndex);
-        }
-      }
-
-      setValidationErrors(errors);
-    },
-    [extractedData, validationErrors],
-  );
-
-  // Check if can proceed to next step (no validation errors)
-  const canProceedToImport = useCallback(() => {
-    return validationErrors.size === 0;
-  }, [validationErrors]);
-
-  // Update a single row
-  const handleRowUpdate = useCallback(
-    (rowIndex: number, updatedRow: Partial<ExtractedWorkLog>) => {
-      setExtractedData((prev) => {
-        const newData = [...prev];
-        newData[rowIndex] = { ...newData[rowIndex], ...updatedRow };
-        return newData;
-      });
-      setHasUnsavedChanges(true);
-      validateRow(rowIndex, updatedRow);
-
-      // Show success toast for specific field updates
-      if (updatedRow.date) {
-        toast.success(`Date updated for row ${rowIndex + 1}`);
-      }
-    },
-    [validateRow],
-  );
-
-  // Bulk replace project names
-  const handleBulkReplaceProject = useCallback(
-    (oldName: string, newName: string) => {
-      const affectedRows = extractedData.filter(
-        (row) => row.projectName === oldName,
-      ).length;
-
-      setExtractedData((prev) =>
-        prev.map((row) =>
-          row.projectName === oldName ? { ...row, projectName: newName } : row,
-        ),
-      );
-      setHasUnsavedChanges(true);
-
-      // Update projectsMap to reflect new unique values
-      setProjectsMap((prev) => {
-        // Remove old name and add new name if not already present
-        const filtered = prev.filter((p) => p.value !== oldName);
-        const hasNewName = filtered.some((p) => p.value === newName);
-        if (!hasNewName) {
-          return [...filtered, { label: newName, value: newName }];
-        }
-        return filtered;
-      });
-
-      toast.success(
-        `Project renamed: "${oldName}" → "${newName}" (${affectedRows} ${affectedRows === 1 ? "row" : "rows"})`,
-      );
-    },
-    [extractedData],
-  );
-
-  // Bulk replace task types
-  const handleBulkReplaceTaskType = useCallback(
-    (oldType: string, newType: string) => {
-      const affectedRows = extractedData.filter(
-        (row) => row.taskType === oldType,
-      ).length;
-
-      setExtractedData((prev) =>
-        prev.map((row) =>
-          row.taskType === oldType ? { ...row, taskType: newType } : row,
-        ),
-      );
-      setHasUnsavedChanges(true);
-
-      // Update taskTypesMap to reflect new unique values
-      setTaskTypesMap((prev) => {
-        // Remove old type and add new type if not already present
-        const filtered = prev.filter((t) => t.value !== oldType);
-        const hasNewType = filtered.some((t) => t.value === newType);
-        if (!hasNewType) {
-          return [...filtered, { label: newType, value: newType }];
-        }
-        return filtered;
-      });
-
-      toast.success(
-        `Task type updated: "${oldType}" → "${newType}" (${affectedRows} ${affectedRows === 1 ? "row" : "rows"})`,
-      );
-    },
-    [extractedData],
-  );
-
-  // Reset all changes
-  const handleResetChanges = useCallback(() => {
-    // Restore extractedData from originalData
-    setExtractedData([...originalData]);
-
-    // Clear validationErrors map
-    setValidationErrors(new Map());
-
-    // Set hasUnsavedChanges to false
-    setHasUnsavedChanges(false);
-
-    // Recalculate projectsMap and taskTypesMap from original data
-    const uniqueProjects = Array.from(
-      new Set(originalData.map((row) => row.projectName).filter(Boolean)),
-    );
-    setProjectsMap(uniqueProjects.map((p) => ({ label: p!, value: p! })));
-
-    const uniqueTaskTypes = Array.from(
-      new Set(originalData.map((row) => row.taskType).filter(Boolean)),
-    );
-    setTaskTypesMap(uniqueTaskTypes.map((t) => ({ label: t!, value: t! })));
-
-    // Show toast notification confirming reset
-    toast.success("All changes have been reset to original data");
-  }, [originalData]);
-
-  // Delete a row
-  const handleDeleteRow = useCallback((rowIndex: number) => {
-    setExtractedData((prev) => prev.filter((_, idx) => idx !== rowIndex));
-    setHasUnsavedChanges(true);
-    toast.info(`Row ${rowIndex + 1} deleted`);
-  }, []);
-
   const steps = [
     { label: "Upload Excel", step: 0 },
-    // { label: "Project Extraction", step: 1 },
-    // { label: "Task Type Mapping", step: 2 },
-    { label: "Data Cleaning", step: 1 },
+    { label: "Data Preview", step: 1 },
     { label: "Import Data", step: 2 },
   ];
 
@@ -276,14 +149,6 @@ function BulkImportPage() {
 
   // Handle navigation from Preview step to Import step
   const handleProceedToImport = () => {
-    if (!canProceedToImport()) {
-      const errorCount = validationErrors.size;
-      toast.error(
-        `Cannot proceed: ${errorCount} validation error${errorCount > 1 ? "s" : ""} found. Please fix the errors before importing.`,
-      );
-      return;
-    }
-
     // Check if there's any data to import
     if (extractedData.length === 0) {
       toast.error("No data to import. Please upload a file with data.");
@@ -297,8 +162,88 @@ function BulkImportPage() {
     setCurrent((p) => p + 1);
   };
 
-  const labelMap = ["Next", "Next", "Next", "Import Data"];
-  const actionMap = [handleUpload, handleProceedToImport]; // Reuse or define per-step
+  // Handle actual import to database
+  const handleImportData = async () => {
+    if (!formData.company_id) {
+      toast.error("Company ID is required");
+      return;
+    }
+
+    if (extractedData.length === 0) {
+      toast.error("No data to import");
+      return;
+    }
+
+    setImportStatus("loading");
+    setImportErrorMessage(null);
+    setImportValidationErrors([]);
+
+    try {
+      const response = await fetch("/api/bulk-import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tasks: extractedData,
+          company_id: formData.company_id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setImportStatus("error");
+        setImportErrorMessage(result.error || "Failed to import data");
+        if (result.validationErrors) {
+          setImportValidationErrors(result.validationErrors);
+        }
+        toast.error(result.error || "Failed to import data");
+        return;
+      }
+
+      setImportStatus("success");
+      setImportResult(result.data);
+      toast.success(result.message || "Data imported successfully!");
+    } catch (error) {
+      setImportStatus("error");
+      setImportErrorMessage(
+        error instanceof Error ? error.message : "An unexpected error occurred",
+      );
+      toast.error("Failed to import data. Please try again.");
+    }
+  };
+
+  // Handle completion (success or error) - reset or navigate away
+  const handleImportComplete = () => {
+    if (importStatus === "success") {
+      // Reset everything and go back to start
+      setExtractedData([]);
+      setOriginalData([]);
+      setFormData({ company_id: user?.current_company as string, file: null });
+      setProjectsMap([]);
+      setTaskTypesMap([]);
+      setHasUnsavedChanges(false);
+      setImportStatus("idle");
+      setImportResult(null);
+      setCurrent(0);
+      toast.success("Ready for next import!");
+    } else {
+      // Go back to preview to fix errors
+      setCurrent(1);
+      setImportStatus("idle");
+    }
+  };
+
+  const labelMap = ["Next", "Next", "Import Data"];
+  const actionMap = [handleUpload, handleProceedToImport, handleImportData];
+
+  // Handle reset all changes
+  const handleResetAllChanges = () => {
+    setExtractedData(originalData);
+    setHasUnsavedChanges(false);
+    toast.success("All changes have been reset");
+  };
 
   const headerActions = [
     {
@@ -307,7 +252,20 @@ function BulkImportPage() {
       variant: "outline" as const,
       onClick: () => setTutorialOpen(true),
     },
-    { label: labelMap[current], onClick: actionMap[current] },
+    ...(current === 1 && hasUnsavedChanges
+      ? [
+          {
+            label: "Reset All Changes",
+            variant: "outline" as const,
+            onClick: handleResetAllChanges,
+          },
+        ]
+      : []),
+    // Hide action button on import step if loading or completed
+    ...(current === 2 &&
+    (importStatus === "loading" || importStatus === "success")
+      ? []
+      : [{ label: labelMap[current], onClick: actionMap[current] }]),
   ];
 
   const renderBody = () => {
@@ -333,17 +291,66 @@ function BulkImportPage() {
         return (
           <Preview
             data={extractedData}
-            company_id={formData.company_id}
-            projects={projectsMap}
-            taskTypes={taskTypesMap}
-            systemTaskTypes={taskTypes}
-            validationErrors={validationErrors}
-            hasUnsavedChanges={hasUnsavedChanges}
-            onRowUpdate={handleRowUpdate}
-            onBulkReplaceProject={handleBulkReplaceProject}
-            onBulkReplaceTaskType={handleBulkReplaceTaskType}
-            onResetChanges={handleResetChanges}
-            onDeleteRow={handleDeleteRow}
+            uniqueProjects={projectsMap.map((p) => p.value)}
+            uniqueTaskTypes={taskTypesMap.map((t) => t.value)}
+            onUpdate={(updatedRow, rowIndex) => {
+              setExtractedData((prev) =>
+                prev.map((row, i) => (i === rowIndex ? updatedRow : row)),
+              );
+              setHasUnsavedChanges(true);
+            }}
+            onDelete={(rowIndex) => {
+              setExtractedData((prev) => prev.filter((_, i) => i !== rowIndex));
+              setHasUnsavedChanges(true);
+              toast.success(`Row ${rowIndex + 1} deleted`);
+            }}
+            onBulkUpdateProject={(oldName, newName) => {
+              const updatedCount = extractedData.filter(
+                (row) => row.projectName === oldName,
+              ).length;
+
+              setExtractedData((prev) =>
+                prev.map((row) =>
+                  row.projectName === oldName
+                    ? { ...row, projectName: newName }
+                    : row,
+                ),
+              );
+
+              // Update the projectsMap to reflect the change
+              setProjectsMap((prev) => {
+                const filtered = prev.filter((p) => p.value !== oldName);
+                const hasNewName = filtered.some((p) => p.value === newName);
+                if (!hasNewName) {
+                  return [...filtered, { label: newName, value: newName }].sort(
+                    (a, b) => a.label.localeCompare(b.label),
+                  );
+                }
+                return filtered;
+              });
+
+              setHasUnsavedChanges(true);
+              toast.success(
+                `Replaced "${oldName}" with "${newName}" in ${updatedCount} ${updatedCount === 1 ? "row" : "rows"}`,
+              );
+            }}
+            systemTaskTypes={taskTypes.map((t) => ({
+              label: t.name,
+              value: t.name,
+            }))}
+          />
+        );
+
+      case 2:
+        return (
+          <ImportData
+            data={extractedData}
+            companyId={formData.company_id}
+            onImportComplete={handleImportComplete}
+            importStatus={importStatus}
+            importResult={importResult}
+            errorMessage={importErrorMessage}
+            validationErrors={importValidationErrors}
           />
         );
 

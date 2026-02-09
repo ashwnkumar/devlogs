@@ -201,16 +201,16 @@ function AllLogsPage() {
   ];
 
   const headerActions = [
-    // {
-    //   label: "Bulk Import",
-    //   icon: Upload,
-    //   onClick: () => {
-    //     if (companies.length === 0)
-    //       return toast.info("You must add at least one company first!");
-    //     router.push("/bulk-import");
-    //   },
-    //   variant: "secondary" as const,
-    // },
+    {
+      label: "Bulk Import",
+      icon: Upload,
+      onClick: () => {
+        if (companies.length === 0)
+          return toast.info("You must add at least one company first!");
+        router.push("/bulk-import");
+      },
+      variant: "outline" as const,
+    },
     {
       label: "Add",
       icon: Plus,
