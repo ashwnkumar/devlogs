@@ -210,7 +210,7 @@ export function BulkEditDialog({
               aria-labelledby="taskTypes-tab"
             >
               <DropdownComponent
-                label="Select Task Type to Replace"
+                label="Select Type to Replace"
                 options={taskTypeOptions}
                 value={selectedTaskType}
                 onValueChange={(value) => {
@@ -222,7 +222,7 @@ export function BulkEditDialog({
 
               <div className="space-y-2">
                 <DropdownComponent
-                  label="Replacement Task Type"
+                  label="Replacement Type"
                   options={systemTaskTypeOptions}
                   value={replacementTaskType}
                   onValueChange={setReplacementTaskType}
@@ -275,7 +275,7 @@ export function BulkEditDialog({
               disabled={!selectedTaskType || !replacementTaskType}
               aria-label="Apply task type replacement"
             >
-              Apply Task Type Replacement
+              Apply Type Replacement
             </Button>
           )}
         </DialogFooter>

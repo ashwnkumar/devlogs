@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownComponent } from "@/components/form/DropdownComponent";
-import { Trash2 } from "lucide-react";
+import { Trash2, Palmtree } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -32,6 +32,7 @@ export function EditableTable({
   onBulkDelete,
   systemTaskTypes,
 }: EditableTableProps) {
+  console.log('systemTaskTypes', systemTaskTypes)
   const [editingCell, setEditingCell] = useState<{
     rowIndex: number;
     field: keyof ExtractedWorkLog;
@@ -90,7 +91,13 @@ export function EditableTable({
   const handleCellClick = (
     rowIndex: number,
     field: keyof ExtractedWorkLog,
-    currentValue: Date | string | number | Record<string, unknown> | null,
+    currentValue:
+      | Date
+      | string
+      | number
+      | boolean
+      | Record<string, unknown>
+      | null,
   ) => {
     setEditingCell({ rowIndex, field });
 
@@ -229,7 +236,7 @@ export function EditableTable({
 
     return (
       <div
-        onClick={() => handleCellClick(rowIndex, field, row[field])}
+        onClick={() => handleCellClick(rowIndex, field, row[field] ?? null)}
         className="cursor-pointer rounded px-2 py-1 hover:bg-muted transition-colors min-h-[32px] flex items-center whitespace-normal break-words"
         title="Click to edit"
       >
@@ -272,7 +279,7 @@ export function EditableTable({
             <TableHead className="w-12">#</TableHead>
             <TableHead className="w-[120px]">Date</TableHead>
             <TableHead className="w-[150px]">Project</TableHead>
-            <TableHead className="w-[130px]">Task Type</TableHead>
+            <TableHead className="w-[130px]">Type</TableHead>
             <TableHead>Description</TableHead>
             <TableHead className="w-[110px]">Start Time</TableHead>
             <TableHead className="w-[110px]">End Time</TableHead>
@@ -280,109 +287,125 @@ export function EditableTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((row, rowIndex) => (
-            <TableRow
-              key={rowIndex}
-              className={selectedRows.has(rowIndex) ? "bg-muted/50" : ""}
-            >
-              <TableCell>
-                <Checkbox
-                  checked={selectedRows.has(rowIndex)}
-                  onCheckedChange={() => toggleRowSelection(rowIndex)}
-                  aria-label={`Select row ${rowIndex + 1}`}
-                />
-              </TableCell>
-              <TableCell className="font-medium">{rowIndex + 1}</TableCell>
+          {data.map((row, rowIndex) => {
+            const isHolidayOrLeave = row.isHolidayOrLeave;
 
-              {/* Date */}
-              <TableCell>
-                {renderCell(
-                  row,
-                  rowIndex,
-                  "date",
-                  row.date ? (
-                    format(new Date(row.date), "dd/MM/yyyy")
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  ),
-                )}
-              </TableCell>
+            return (
+              <TableRow
+                key={rowIndex}
+                className={`${selectedRows.has(rowIndex) ? "bg-muted/50" : ""} ${isHolidayOrLeave ? "bg-blue-50/50 dark:bg-blue-950/20" : ""}`}
+              >
+                <TableCell>
+                  <Checkbox
+                    checked={selectedRows.has(rowIndex)}
+                    onCheckedChange={() => toggleRowSelection(rowIndex)}
+                    aria-label={`Select row ${rowIndex + 1}`}
+                  />
+                </TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {isHolidayOrLeave && (
+                      <Palmtree
+                        className="h-4 w-4 text-blue-500"
+                        aria-label="Holiday/Leave"
+                      />
+                    )}
+                    {rowIndex + 1}
+                  </div>
+                </TableCell>
 
-              {/* Project Name */}
-              <TableCell>
-                {renderCell(
-                  row,
-                  rowIndex,
-                  "projectName",
-                  row.projectName || (
-                    <span className="text-muted-foreground">-</span>
-                  ),
-                )}
-              </TableCell>
+                {/* Date */}
+                <TableCell>
+                  {renderCell(
+                    row,
+                    rowIndex,
+                    "date",
+                    row.date ? (
+                      format(new Date(row.date), "dd/MM/yyyy")
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    ),
+                  )}
+                </TableCell>
 
-              {/* Task Type */}
-              <TableCell>
-                {renderCell(
-                  row,
-                  rowIndex,
-                  "taskType",
-                  row.taskType || (
-                    <span className="text-muted-foreground">-</span>
-                  ),
-                )}
-              </TableCell>
+                {/* Project Name */}
+                <TableCell>
+                  {renderCell(
+                    row,
+                    rowIndex,
+                    "projectName",
+                    row.projectName || (
+                      <span className="text-muted-foreground">-</span>
+                    ),
+                  )}
+                </TableCell>
 
-              {/* Task Description */}
-              <TableCell>
-                {renderCell(
-                  row,
-                  rowIndex,
-                  "task",
-                  row.task || <span className="text-muted-foreground">-</span>,
-                )}
-              </TableCell>
+                {/* Type */}
+                <TableCell>
+                  {renderCell(
+                    row,
+                    rowIndex,
+                    "taskType",
+                    row.taskType || (
+                      <span className="text-muted-foreground">-</span>
+                    ),
+                  )}
+                </TableCell>
 
-              {/* Start Time */}
-              <TableCell>
-                {renderCell(
-                  row,
-                  rowIndex,
-                  "startTime",
-                  row.startTime ? (
-                    format(new Date(row.startTime), "HH:mm")
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  ),
-                )}
-              </TableCell>
+                {/* Task Description */}
+                <TableCell>
+                  {renderCell(
+                    row,
+                    rowIndex,
+                    "task",
+                    row.task || (
+                      <span className="text-muted-foreground">-</span>
+                    ),
+                  )}
+                </TableCell>
 
-              {/* End Time */}
-              <TableCell>
-                {renderCell(
-                  row,
-                  rowIndex,
-                  "endTime",
-                  row.endTime ? (
-                    format(new Date(row.endTime), "HH:mm")
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  ),
-                )}
-              </TableCell>
+                {/* Start Time */}
+                <TableCell>
+                  {renderCell(
+                    row,
+                    rowIndex,
+                    "startTime",
+                    row.startTime ? (
+                      format(new Date(row.startTime), "HH:mm")
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    ),
+                  )}
+                </TableCell>
 
-              {/* Actions */}
-              <TableCell>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => onDelete(rowIndex)}
-                  title="Delete"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+                {/* End Time */}
+                <TableCell>
+                  {renderCell(
+                    row,
+                    rowIndex,
+                    "endTime",
+                    row.endTime ? (
+                      format(new Date(row.endTime), "HH:mm")
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    ),
+                  )}
+                </TableCell>
+
+                {/* Actions */}
+                <TableCell>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => onDelete(rowIndex)}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </>

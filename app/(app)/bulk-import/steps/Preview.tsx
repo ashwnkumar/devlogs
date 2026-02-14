@@ -5,6 +5,7 @@ import { EditableTable } from "../components/EditableTable";
 import { DropdownComponent } from "@/components/form/DropdownComponent";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { X } from "lucide-react";
 
 type PreviewProps = {
@@ -15,7 +16,65 @@ type PreviewProps = {
   uniqueProjects: string[];
   uniqueTaskTypes: string[];
   systemTaskTypes: { label: string; value: string }[];
+  isLoading?: boolean;
 };
+
+// Skeleton Loading Component
+function PreviewSkeleton() {
+  return (
+    <div className="w-full h-full flex flex-col gap-4 px-6 py-3">
+      {/* Info Banner Skeleton */}
+      <div className="rounded-lg border bg-muted/50 p-3">
+        <Skeleton className="h-4 w-3/4" />
+      </div>
+
+      {/* Filters Section Skeleton */}
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <Skeleton className="h-5 w-16" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary Cards Skeleton */}
+      <div className="grid grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="rounded-lg border bg-card p-4">
+            <Skeleton className="h-4 w-24 mb-2" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        ))}
+      </div>
+
+      {/* Table Skeleton */}
+      <div className="w-full rounded-lg border bg-card p-4">
+        <div className="space-y-3">
+          {/* Table Header */}
+          <div className="flex gap-4 pb-3 border-b">
+            {[...Array(7)].map((_, i) => (
+              <Skeleton key={i} className="h-4 flex-1" />
+            ))}
+          </div>
+          {/* Table Rows */}
+          {[...Array(5)].map((_, rowIndex) => (
+            <div key={rowIndex} className="flex gap-4 py-2">
+              {[...Array(7)].map((_, colIndex) => (
+                <Skeleton key={colIndex} className="h-10 flex-1" />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Preview({
   data,
@@ -25,6 +84,7 @@ function Preview({
   uniqueProjects,
   uniqueTaskTypes,
   systemTaskTypes,
+  isLoading = false,
 }: PreviewProps) {
   const [selectedProject, setSelectedProject] = useState<string>("");
   const [selectedTaskType, setSelectedTaskType] = useState<string>("");
@@ -129,6 +189,11 @@ function Preview({
   const projectOptions = uniqueProjects.map((p) => ({ label: p, value: p }));
   const taskTypeOptions = uniqueTaskTypes.map((t) => ({ label: t, value: t }));
 
+  // Show skeleton while loading
+  if (isLoading) {
+    return <PreviewSkeleton />;
+  }
+
   return (
     <div className="w-full h-full flex flex-col gap-4 px-6 py-3">
       {/* Info Banner */}
@@ -206,7 +271,7 @@ function Preview({
             )}
           </div>
           <DropdownComponent
-            label="Task Type"
+            label="Type"
             options={taskTypeOptions}
             value={selectedTaskType}
             onValueChange={setSelectedTaskType}
@@ -293,7 +358,7 @@ function Preview({
             )}
             {selectedTaskType && (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary">
-                Task Type: {selectedTaskType}
+                Type: {selectedTaskType}
                 <X
                   className="h-3 w-3 cursor-pointer hover:text-primary/80"
                   onClick={() => setSelectedTaskType("")}
@@ -337,39 +402,41 @@ function Preview({
           <p className="text-2xl font-bold">{rowsWithProject}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">With Task Type</p>
+          <p className="text-sm text-muted-foreground">With Type</p>
           <p className="text-2xl font-bold">{rowsWithTaskType}</p>
         </div>
       </div>
 
       {/* Editable Data Table */}
-      <div className="w-full rounded-lg border bg-card overflow-auto">
-        <EditableTable
-          data={filteredData}
-          onUpdate={(updatedRow, displayIndex) => {
-            // Map display index to original index
-            const originalIndex =
-              filteredDataWithIndices[displayIndex].originalIndex;
-            onUpdate(updatedRow, originalIndex);
-          }}
-          onDelete={(displayIndex) => {
-            // Map display index to original index
-            const originalIndex =
-              filteredDataWithIndices[displayIndex].originalIndex;
-            onDelete(originalIndex);
-          }}
-          onBulkDelete={(displayIndices) => {
-            // Map display indices to original indices
-            const originalIndices = displayIndices.map(
-              (displayIndex) =>
-                filteredDataWithIndices[displayIndex].originalIndex,
-            );
-            // Sort in descending order to delete from end to start
-            const sortedIndices = originalIndices.sort((a, b) => b - a);
-            sortedIndices.forEach((originalIndex) => onDelete(originalIndex));
-          }}
-          systemTaskTypes={systemTaskTypes}
-        />
+      <div className="w-full rounded-lg  bg-card overflow-auto min-h-[min(800px,80vh)] max-h-[85vh]">
+        <div className="min-h-0 flex-1 overflow-auto">
+          <EditableTable
+            data={filteredData}
+            onUpdate={(updatedRow, displayIndex) => {
+              // Map display index to original index
+              const originalIndex =
+                filteredDataWithIndices[displayIndex].originalIndex;
+              onUpdate(updatedRow, originalIndex);
+            }}
+            onDelete={(displayIndex) => {
+              // Map display index to original index
+              const originalIndex =
+                filteredDataWithIndices[displayIndex].originalIndex;
+              onDelete(originalIndex);
+            }}
+            onBulkDelete={(displayIndices) => {
+              // Map display indices to original indices
+              const originalIndices = displayIndices.map(
+                (displayIndex) =>
+                  filteredDataWithIndices[displayIndex].originalIndex,
+              );
+              // Sort in descending order to delete from end to start
+              const sortedIndices = originalIndices.sort((a, b) => b - a);
+              sortedIndices.forEach((originalIndex) => onDelete(originalIndex));
+            }}
+            systemTaskTypes={systemTaskTypes}
+          />
+        </div>
       </div>
     </div>
   );

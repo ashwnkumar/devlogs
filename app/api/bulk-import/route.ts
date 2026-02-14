@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { ExtractedWorkLog } from "@/app/actions/bulk-import";
+import { isHolidayOrLeave, createFullDayTimeRange } from "@/lib/utils";
 
 // ── Type Definitions ────────────────────────────────────────────────────
 
@@ -63,6 +64,50 @@ interface ValidationResult {
   errors: ValidationError[];
 }
 
+// ── Data Normalization ──────────────────────────────────────────────────
+
+/**
+ * Normalizes a string field by converting empty/whitespace strings to null
+ *
+ * Handles:
+ * - null/undefined inputs → returns null
+ * - Empty strings → returns null
+ * - Whitespace-only strings → returns null
+ * - Valid strings → returns trimmed string
+ *
+ * Requirements: 1.1, 1.2, 1.3
+ *
+ * @param value - String value to normalize (may be null/undefined)
+ * @returns Normalized string or null
+ */
+function normalizeStringField(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+/**
+ * Normalizes all string fields in a task by converting empty/whitespace strings to null
+ *
+ * Applies normalizeStringField to projectName, taskType, and task fields.
+ * Preserves all other fields (dates, rowNumber, etc.) unchanged.
+ *
+ * Requirements: 1.4
+ *
+ * @param task - ExtractedWorkLog task to normalize
+ * @returns Normalized task with string fields converted to null if empty
+ */
+function normalizeTaskData(task: ExtractedWorkLog): ExtractedWorkLog {
+  return {
+    ...task,
+    projectName: normalizeStringField(task.projectName),
+    taskType: normalizeStringField(task.taskType),
+    task: normalizeStringField(task.task),
+  };
+}
+
 // ── Validation Layer ────────────────────────────────────────────────────
 
 /**
@@ -103,21 +148,21 @@ function validateBulkImportData(
     if (!task.date) {
       errors.push({ rowNumber, field: "date", message: "Date is required" });
     }
-    if (!task.projectName || task.projectName.trim() === "") {
+    if (!task.projectName) {
       errors.push({
         rowNumber,
         field: "projectName",
         message: "Project name is required",
       });
     }
-    if (!task.taskType || task.taskType.trim() === "") {
+    if (!task.taskType) {
       errors.push({
         rowNumber,
         field: "taskType",
         message: "Task type is required",
       });
     }
-    if (!task.task || task.task.trim() === "") {
+    if (!task.task) {
       errors.push({
         rowNumber,
         field: "task",
@@ -189,12 +234,14 @@ export interface ProjectResult {
  *
  * @param tasks - Array of tasks containing project names
  * @param companyId - Company ID to associate projects with
+ * @param userId - User ID to associate projects with
  * @param supabase - Supabase client instance
  * @returns Project processing result with mapping and statistics
  */
 export async function processProjects(
   tasks: ExtractedWorkLog[],
   companyId: string,
+  userId: string,
   supabase: any,
 ): Promise<ProjectResult> {
   // Extract unique project names (case-insensitive) - Requirement 3.1
@@ -243,6 +290,7 @@ export async function processProjects(
         projectsToCreate.map((name) => ({
           name,
           company_id: companyId,
+          user_id: userId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })),
@@ -287,7 +335,6 @@ export interface DuplicateCheckResult {
  * A duplicate is defined as a task matching an existing task on:
  * - user_id
  * - project_id
- * - date (YYYY-MM-DD format)
  * - start_time (ISO timestamp)
  * - title
  *
@@ -309,14 +356,11 @@ export async function checkForDuplicates(
 
   // Build list of task signatures to check - Requirement 5.1
   const taskSignatures = tasks
-    .filter(
-      (task) => task.date && task.startTime && task.task && task.projectName,
-    )
+    .filter((task) => task.startTime && task.task && task.projectName)
     .map((task, index) => ({
       rowNumber: index + 1,
       user_id: userId,
       project_id: projectNameToIdMap.get(task.projectName!.toLowerCase()),
-      date: formatDate(task.date!),
       start_time: task.startTime!.toISOString(),
       title: task.task!,
     }));
@@ -338,7 +382,7 @@ export async function checkForDuplicates(
   // Use IN clause for efficient batch checking
   const { data: existingTasks, error } = await supabase
     .from("tasks")
-    .select("user_id, project_id, date, start_time, title")
+    .select("user_id, project_id, start_time, title")
     .in("project_id", projectIds)
     .eq("user_id", userId);
 
@@ -350,7 +394,6 @@ export async function checkForDuplicates(
       (existing: any) =>
         existing.user_id === sig.user_id &&
         existing.project_id === sig.project_id &&
-        existing.date === sig.date &&
         existing.start_time === sig.start_time &&
         existing.title === sig.title,
     );
@@ -361,7 +404,7 @@ export async function checkForDuplicates(
         rowNumber: sig.rowNumber,
         field: "task",
         message:
-          "Duplicate task detected (same user, project, date, start time, and title)",
+          "Duplicate task detected (same user, project, start time, and title)",
       });
     }
   });
@@ -372,17 +415,7 @@ export async function checkForDuplicates(
   };
 }
 
-/**
- * Formats a Date object to YYYY-MM-DD string
- *
- * @param date - Date to format
- * @returns Date string in YYYY-MM-DD format
- */
-function formatDate(date: Date): string {
-  return date.toISOString().split("T")[0]; // YYYY-MM-DD
-}
-
-// ── Task Type Service ───────────────────────────────────────────────────
+// ── Type Service ───────────────────────────────────────────────────
 
 /**
  * Result of task type processing
@@ -448,7 +481,7 @@ export async function processTaskTypes(
       .insert(
         taskTypesToCreate.map((name) => ({
           name,
-          color: "#6B7280", // default gray color - Requirement 4.4
+          color: "oklch(0.77 0.20 131)", // default color matching schema - Requirement 4.4
           user_id: userId,
         })),
       )
@@ -478,12 +511,13 @@ export async function processTaskTypes(
 export interface TaskInsertData {
   user_id: string;
   project_id: string;
-  task_type_id: string;
+  task_type: string;
   title: string;
-  date: string;
   start_time: string;
   end_time: string;
-  duration: number;
+  duration_minutes: number;
+  is_running: boolean;
+  is_overtime: boolean;
 }
 
 /**
@@ -491,9 +525,11 @@ export interface TaskInsertData {
  *
  * Transforms ExtractedWorkLog entries into database format:
  * - Calculates duration in minutes from start/end times
- * - Formats dates as YYYY-MM-DD
  * - Formats times as ISO timestamps
  * - Maps project names and task types to their IDs
+ * - Sets is_running to false (all bulk imported tasks are completed)
+ * - Sets is_overtime to false by default
+ * - For Holiday/Leave: Uses company working hours for start/end times
  *
  * Requirements: 7.2, 10.1, 10.2, 10.3
  *
@@ -501,6 +537,7 @@ export interface TaskInsertData {
  * @param userId - User ID to associate tasks with
  * @param projectNameToIdMap - Map of project names to IDs
  * @param taskTypeNameToIdMap - Map of task type names to IDs
+ * @param workingHours - Company working hours (work_start, work_end)
  * @param supabase - Supabase client instance
  * @returns Count of tasks created
  * @throws Error if project or task type mapping is missing
@@ -510,6 +547,7 @@ export async function insertTasks(
   userId: string,
   projectNameToIdMap: Map<string, string>,
   taskTypeNameToIdMap: Map<string, string>,
+  workingHours: { work_start: string; work_end: string },
   supabase: any,
 ): Promise<number> {
   // Transform tasks into insert format - Requirement 7.2
@@ -527,25 +565,46 @@ export async function insertTasks(
       );
     }
 
-    if (!task.date || !task.startTime || !task.endTime || !task.task) {
+    if (!task.task) {
       throw new Error(
-        `Missing required fields for task at row ${task.rowNumber || "unknown"}`,
+        `Missing task title for task at row ${task.rowNumber || "unknown"}`,
+      );
+    }
+
+    let startTime = task.startTime;
+    let endTime = task.endTime;
+
+    // For Holiday/Leave entries, use company working hours
+    if (task.taskType && isHolidayOrLeave(task.taskType) && task.date) {
+      const timeRange = createFullDayTimeRange(
+        task.date,
+        workingHours.work_start,
+        workingHours.work_end,
+      );
+      startTime = timeRange.start;
+      endTime = timeRange.end;
+    }
+
+    if (!startTime || !endTime) {
+      throw new Error(
+        `Missing start/end time for task at row ${task.rowNumber || "unknown"}`,
       );
     }
 
     // Calculate duration in minutes - Requirement 7.2
-    const durationMs = task.endTime.getTime() - task.startTime.getTime();
+    const durationMs = endTime.getTime() - startTime.getTime();
     const durationMinutes = Math.round(durationMs / (1000 * 60));
 
     return {
       user_id: userId,
       project_id: projectId,
-      task_type_id: taskTypeId,
+      task_type: taskTypeId,
       title: task.task,
-      date: formatDate(task.date), // YYYY-MM-DD format - Requirement 10.1
-      start_time: task.startTime.toISOString(), // ISO timestamp - Requirement 10.2
-      end_time: task.endTime.toISOString(), // ISO timestamp - Requirement 10.3
-      duration: durationMinutes,
+      start_time: startTime.toISOString(), // ISO timestamp - Requirement 10.2
+      end_time: endTime.toISOString(), // ISO timestamp - Requirement 10.3
+      duration_minutes: durationMinutes,
+      is_running: false, // All bulk imported tasks are completed
+      is_overtime: false, // Default to false for bulk imports
     };
   });
 
@@ -593,6 +652,34 @@ export async function verifyCompanyAccess(
 
   // Verify user has access to specified company_id - Requirement 9.4
   return company.user_id === userId;
+}
+
+/**
+ * Fetches company working hours
+ *
+ * @param companyId - Company ID to fetch working hours for
+ * @param supabase - Supabase client instance
+ * @returns Object with work_start and work_end times, or defaults
+ */
+export async function getCompanyWorkingHours(
+  companyId: string,
+  supabase: any,
+): Promise<{ work_start: string; work_end: string }> {
+  const { data: company, error } = await supabase
+    .from("companies")
+    .select("work_start, work_end")
+    .eq("id", companyId)
+    .single();
+
+  if (error || !company) {
+    // Return default working hours if company not found
+    return { work_start: "09:00:00", work_end: "18:00:00" };
+  }
+
+  return {
+    work_start: company.work_start || "09:00:00",
+    work_end: company.work_end || "18:00:00",
+  };
 }
 
 // ── Response Helpers ────────────────────────────────────────────────────
@@ -693,8 +780,22 @@ export async function POST(request: NextRequest) {
     const body: BulkImportRequest = await request.json();
     const { tasks, company_id } = body;
 
+    // 3.1. Transform date strings to Date objects (JSON serialization converts dates to strings)
+    const transformedTasks = tasks.map((task) => ({
+      ...task,
+      date: task.date ? new Date(task.date) : null,
+      startTime: task.startTime ? new Date(task.startTime) : null,
+      endTime: task.endTime ? new Date(task.endTime) : null,
+    }));
+
+    // 3.2. Normalize string fields (convert empty strings to null) - Requirements: 1.5, 4.3
+    const normalizedTasks = transformedTasks.map(normalizeTaskData);
+
     // 4. Validate input data (fail fast) - Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
-    const validationResult = validateBulkImportData(tasks, company_id);
+    const validationResult = validateBulkImportData(
+      normalizedTasks,
+      company_id,
+    );
     if (!validationResult.isValid) {
       // Return 400 for validation errors - Requirement 1.4
       return errorResponse(400, "Validation failed", validationResult.errors);
@@ -709,15 +810,27 @@ export async function POST(request: NextRequest) {
 
     // ── Task 8.2: Main Import Orchestration ─────────────────────────────
 
-    // 6. Process task types first (outside transaction) - Requirement 12.3
-    const taskTypeResult = await processTaskTypes(tasks, userId, supabase);
+    // 6. Fetch company working hours for Holiday/Leave entries
+    const workingHours = await getCompanyWorkingHours(company_id, supabase);
 
-    // 7. Process projects - Requirement 12.4
-    const projectResult = await processProjects(tasks, company_id, supabase);
+    // 7. Process task types first (outside transaction) - Requirement 12.3
+    const taskTypeResult = await processTaskTypes(
+      normalizedTasks,
+      userId,
+      supabase,
+    );
 
-    // 8. Check for duplicates before inserting - Requirement 5.1-5.4, 12.5
+    // 8. Process projects - Requirement 12.4
+    const projectResult = await processProjects(
+      normalizedTasks,
+      company_id,
+      userId,
+      supabase,
+    );
+
+    // 9. Check for duplicates before inserting - Requirement 5.1-5.4, 12.5
     const duplicateCheck = await checkForDuplicates(
-      tasks,
+      normalizedTasks,
       userId,
       projectResult.projectNameToIdMap,
       supabase,
@@ -732,12 +845,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 9. Insert all tasks in batch - Requirement 7.2, 12.6
+    // 10. Insert all tasks in batch - Requirement 7.2, 12.6
     const tasksCreated = await insertTasks(
-      tasks,
+      normalizedTasks,
       userId,
       projectResult.projectNameToIdMap,
       taskTypeResult.taskTypeNameToIdMap,
+      workingHours,
       supabase,
     );
 

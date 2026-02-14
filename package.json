@@ -47,6 +47,7 @@
     "@vitest/ui": "^4.0.17",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "fast-check": "^4.5.3",
     "happy-dom": "^20.3.1",
     "jsdom": "^27.4.0",
     "tailwindcss": "^4",

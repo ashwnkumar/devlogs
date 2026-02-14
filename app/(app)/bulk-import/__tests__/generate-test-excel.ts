@@ -17,7 +17,7 @@ async function generateTestExcel() {
   worksheet.columns = [
     { header: "Date", key: "date", width: 12 },
     { header: "Project", key: "project", width: 20 },
-    { header: "Task Type", key: "taskType", width: 15 },
+    { header: "Type", key: "taskType", width: 15 },
     { header: "Description", key: "description", width: 40 },
     { header: "Start Time", key: "startTime", width: 12 },
     { header: "End Time", key: "endTime", width: 12 },

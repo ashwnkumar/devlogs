@@ -12,6 +12,9 @@ import Preview from "./steps/Preview";
 import ImportData from "./steps/ImportData";
 import { BulkImportTutorial } from "@/components/BulkImportTutorial";
 import { Info } from "lucide-react";
+// import { SYSTEM_TASK_TYPES } from "@/types/user";
+// import { createWorkDayTimeRange } from "@/lib/utils";
+import { useCompany } from "@/context/CompanyContext";
 
 type ErrorType = {
   company_id: string;
@@ -28,6 +31,8 @@ function BulkImportPage() {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { user } = useAuth();
   const { taskTypes } = useGlobal();
+
+  const { companies } = useCompany();
 
   const [formData, setFormData] = useState<FormType>({
     company_id: "",
@@ -47,6 +52,7 @@ function BulkImportPage() {
 
   // Editable data (modified by user)
   const [extractedData, setExtractedData] = useState<ExtractedWorkLog[]>([]);
+  console.log('extractedData', extractedData)
 
   // Original data backup for reset functionality
   const [originalData, setOriginalData] = useState<ExtractedWorkLog[]>([]);
@@ -336,8 +342,9 @@ function BulkImportPage() {
             }}
             systemTaskTypes={taskTypes.map((t) => ({
               label: t.name,
-              value: t.name,
+              value: t.id,
             }))}
+            isLoading={loading}
           />
         );
 

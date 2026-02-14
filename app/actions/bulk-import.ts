@@ -2,6 +2,7 @@
 "use server";
 
 import * as XLSX from "xlsx";
+import { SYSTEM_TASK_TYPES } from "@/types/user";
 
 // Expected shape per row after processing
 export type ExtractedWorkLog = {
@@ -13,6 +14,7 @@ export type ExtractedWorkLog = {
   endTime: Date | null;
   rowNumber: number; // 1-based for user-friendly error display
   originalRow: Record<string, any>; // raw values if needed for debugging/preview
+  isHolidayOrLeave?: boolean; // Flag to identify holiday/leave entries
 };
 
 // Result shape from the action
@@ -120,12 +122,7 @@ export async function extractExcelData(
         "kind",
         "classification",
       ]),
-      task: findColumn(headers, [
-        "description",
-        "what",
-        "notes",
-        "activity",
-      ]),
+      task: findColumn(headers, ["description", "what", "notes", "activity"]),
       startTime: findColumn(headers, [
         "start time",
         "start",
@@ -162,7 +159,6 @@ export async function extractExcelData(
 
       extracted.push(entry);
     }
-
 
     if (extracted.length === 0) {
       return { success: false, error: "No valid rows found after processing" };

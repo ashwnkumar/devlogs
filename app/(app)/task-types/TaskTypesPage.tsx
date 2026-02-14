@@ -167,7 +167,7 @@ function TaskTypesPage() {
       <SheetComponent
         open={open}
         onOpenChange={setOpen}
-        title={editingTaskType ? "Edit Task Type" : "Add Task Type"}
+        title={editingTaskType ? "Edit Type" : "Add Type"}
       >
         <form
           id="task-type-form"
@@ -176,7 +176,7 @@ function TaskTypesPage() {
         >
           <InputComponent
             name="name"
-            label="Task Type Name"
+            label="Type Name"
             className="w-full"
             required
             value={formData.name}
@@ -217,7 +217,7 @@ function TaskTypesPage() {
           <div className="flex items-center gap-2 w-full p-3 border rounded-md bg-muted/50">
             <span className="text-sm text-muted-foreground">Preview:</span>
             <Badge style={{ backgroundColor: formData.color }}>
-              {formData.name || "Task Type Name"}
+              {formData.name || "Type Name"}
             </Badge>
           </div>
 
@@ -226,8 +226,8 @@ function TaskTypesPage() {
               {globalLoading
                 ? "Processing..."
                 : editingTaskType
-                  ? "Update Task Type"
-                  : "Add Task Type"}
+                  ? "Update Type"
+                  : "Add Type"}
             </Button>
             <Button
               type="button"

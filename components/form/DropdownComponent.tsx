@@ -20,6 +20,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type BaseOption = Record<string, any>;
 
@@ -77,26 +82,33 @@ export function DropdownComponent<T extends BaseOption>({
 
       <div className="relative">
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="dropdownComponent"
-              aria-expanded={open}
-              className={cn(
-                "w-full justify-between",
-                hasError &&
-                  "border-destructive relative focus-visible:ring-destructive focus-visible:ring-2 focus-visible:ring-offset-2",
-                !hasError && "focus-visible:ring-ring",
-              )}
-            >
-              <span className="truncate  text-start w-[85%]">
-                {displayText}
-              </span>
-              <div className="absolute right-2 bg-inherit group-hover:bg-inherit">
-                <ChevronsUpDown className="shrink-0 opacity-50" />
-              </div>
-            </Button>
-          </PopoverTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="dropdownComponent"
+                  aria-expanded={open}
+                  className={cn(
+                    "w-full justify-between",
+                    hasError &&
+                      "border-destructive relative focus-visible:ring-destructive focus-visible:ring-2 focus-visible:ring-offset-2",
+                    !hasError && "focus-visible:ring-ring",
+                  )}
+                >
+                  <span className="truncate  text-start w-[85%]">
+                    {displayText}
+                  </span>
+                  <div className="absolute right-2 bg-inherit group-hover:bg-inherit">
+                    <ChevronsUpDown className="shrink-0 opacity-50" />
+                  </div>
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start">
+              <p>{displayText}</p>
+            </TooltipContent>
+          </Tooltip>
 
           <PopoverContent className=" p-0" align="end">
             <Command>

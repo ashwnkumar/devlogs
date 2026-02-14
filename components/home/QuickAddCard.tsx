@@ -84,7 +84,7 @@ function QuickAddCard() {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -124,7 +124,7 @@ function QuickAddCard() {
             className="w-full"
             inputClassName="bg-background"
             name="taskType"
-            label="Task Type"
+            label="Type"
             onChange={handleInputChange}
             value={formData.taskType}
           />

@@ -61,3 +61,37 @@ export function toDateTimeLocalString(date: Date | null | undefined): string {
     return "";
   }
 }
+
+/**
+ * Check if a task type is a system Holiday or Leave type
+ */
+export function isHolidayOrLeave(taskTypeName: string): boolean {
+  const normalized = taskTypeName.toLowerCase().trim();
+  return normalized === "holiday" || normalized === "on leave";
+}
+
+/**
+ * Create full-day time range using company working hours
+ * @param date - The date for the log
+ * @param workStart - Company work start time (HH:MM:SS format)
+ * @param workEnd - Company work end time (HH:MM:SS format)
+ * @returns Object with start and end Date objects
+ */
+export function createFullDayTimeRange(
+  date: Date,
+  workStart: string = "09:00:00",
+  workEnd: string = "18:00:00",
+): { start: Date; end: Date } {
+  const [startHours, startMinutes, startSeconds] = workStart
+    .split(":")
+    .map(Number);
+  const [endHours, endMinutes, endSeconds] = workEnd.split(":").map(Number);
+
+  const start = new Date(date);
+  start.setHours(startHours, startMinutes, startSeconds || 0, 0);
+
+  const end = new Date(date);
+  end.setHours(endHours, endMinutes, endSeconds || 0, 0);
+
+  return { start, end };
+}
