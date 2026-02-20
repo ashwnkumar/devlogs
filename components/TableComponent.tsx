@@ -34,9 +34,12 @@ type TableComponentProps<T extends object & { id: string | number }> = {
   columns: TableColumn<T>[];
   actions?: TableActions<T>[];
   viewPath?: string;
-  onEdit: (row: T) => void;
-  onDelete: (row: T) => void;
+  onEdit: (row: T, idx?: string) => void;
+  onDelete: (row: T, idx?: string) => void;
   loading?: boolean;
+  hideEdit?: boolean;
+  hideDelete?: boolean;
+  disableClick?: boolean;
 };
 
 function TableComponent<T extends object & { id: string | number }>({
@@ -45,8 +48,11 @@ function TableComponent<T extends object & { id: string | number }>({
   actions = [],
   viewPath,
   onEdit,
+  hideEdit = false,
+  hideDelete = false,
   onDelete,
   loading,
+  disableClick = false,
 }: TableComponentProps<T>) {
   const router = useRouter();
   const [view, setView] = useState<boolean>(false);
@@ -73,9 +79,7 @@ function TableComponent<T extends object & { id: string | number }>({
             <Ban />
           </EmptyMedia>
           <EmptyTitle>No Data Found</EmptyTitle>
-          <EmptyDescription>
-            No data found.
-          </EmptyDescription>
+          <EmptyDescription>No data found.</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -115,7 +119,18 @@ function TableComponent<T extends object & { id: string | number }>({
             <TableRow>
               <TableHead>#</TableHead>
               {columns.map((col, colIdx) => (
-                <TableHead key={String(col.key) || colIdx}>
+                <TableHead
+                  key={String(col.key) || colIdx}
+                  style={
+                    col.width
+                      ? {
+                          width: col.width,
+                          minWidth: col.width,
+                          maxWidth: col.width,
+                        }
+                      : undefined
+                  }
+                >
                   {col.label}
                 </TableHead>
               ))}
@@ -124,19 +139,33 @@ function TableComponent<T extends object & { id: string | number }>({
           </TableHeader>
           <TableBody>
             {data.map((row, rowIdx) => (
-              <TableRow onClick={() => handleRowClick(row)} key={rowIdx}>
+              <TableRow
+                onClick={() => (disableClick ? null : handleRowClick(row))}
+                key={rowIdx}
+              >
                 <TableCell>{rowIdx + 1}</TableCell>
                 {columns.map((col) => (
-                  <TableCell key={String(col.key)}>
+                  <TableCell
+                    key={String(col.key)}
+                    style={
+                      col.width
+                        ? {
+                            width: col.width,
+                            minWidth: col.width,
+                            maxWidth: col.width,
+                          }
+                        : undefined
+                    }
+                  >
                     {col.render
-                      ? col.render(row)
+                      ? col.render(row, rowIdx)
                       : String(
                           (row as Record<string, unknown>)[col.key as string] ??
                             "",
                         )}
                   </TableCell>
                 ))}
-                {actions.length > 0 && (
+                {/* {actions.length > 0 && (
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -160,26 +189,30 @@ function TableComponent<T extends object & { id: string | number }>({
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                )}
+                )} */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(row)}
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    {!hideEdit && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(row, String(rowIdx))}
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
 
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => onDelete(row)}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!hideDelete && (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => onDelete(row, String(rowIdx))}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -203,7 +236,7 @@ function TableComponent<T extends object & { id: string | number }>({
                 <p className="font-medium text-sm">{col.label}:</p>
                 <p className="text-lg font-light">
                   {col.render
-                    ? col.render(selected as T)
+                    ? col.render(selected as T, 0)
                     : String(
                         (selected as Record<string, unknown>)[
                           col.key as string

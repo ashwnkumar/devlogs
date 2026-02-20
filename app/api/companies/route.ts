@@ -86,6 +86,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!sanitizedBody.left_at) {
+      const { error: userErr } = await supabase
+        .from("users")
+        .update({ current_company: data.id })
+        .eq("id", user.id)
+        .select();
+
+      if (userErr) {
+        console.error("Error updating current company");
+
+        return NextResponse.json(
+          {
+            error: `Failed to update user current company: ${userErr.message}`,
+          },
+          { status: 500 },
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data,

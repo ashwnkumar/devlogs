@@ -20,6 +20,7 @@ function ProfileSettings() {
     last_active: new Date(),
     email: "",
     preferences: {},
+    role: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

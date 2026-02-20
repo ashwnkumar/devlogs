@@ -179,6 +179,37 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Check if this is the user's current company
+    const { data: userData, error: userFetchError } = await supabase
+      .from("users")
+      .select("current_company")
+      .eq("id", user.id)
+      .single();
+
+    if (userFetchError) {
+      return NextResponse.json(
+        { error: `Failed to fetch user data: ${userFetchError.message}` },
+        { status: 500 },
+      );
+    }
+
+    // If deleting the current company, set current_company to null
+    if (userData.current_company === id) {
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ current_company: null })
+        .eq("id", user.id);
+
+      if (updateError) {
+        return NextResponse.json(
+          {
+            error: `Failed to update user current company: ${updateError.message}`,
+          },
+          { status: 500 },
+        );
+      }
+    }
+
     // Delete the company
     const { error } = await supabase.from("companies").delete().eq("id", id);
 

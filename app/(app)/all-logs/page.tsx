@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 function page() {
   return (
-    <div>
+    <div className="w-full h-full">
       <AllLogsPage />
     </div>
   );

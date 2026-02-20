@@ -57,7 +57,6 @@ export function GlobalProvider({ children }: { children: React.ReactNode }) {
     },
   ]);
 
-  console.log("user", user);
 
   const fetchTaskTypes = useCallback(async () => {
     if (!user) return;
