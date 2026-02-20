@@ -32,10 +32,6 @@ export default function MaintenancePage() {
 
             {/* Status box */}
             <div className="py-6 px-6 sm:px-8 bg-muted/40 rounded-xl border border-border">
-              <div className="flex items-center justify-center gap-3 text-muted-foreground">
-                <Clock className="h-5 w-5 text-primary flex-shrink-0" />
-                <p className="font-medium">Expected back in a few hours</p>
-              </div>
               <p className="mt-3 text-sm text-muted-foreground/90">
                 We're making DevLog faster, more reliable, and even more useful
                 for conscious developers.
