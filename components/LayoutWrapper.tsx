@@ -19,17 +19,22 @@ function LayoutWrapper({ children }: Props) {
         <ProjectProvider>
           <TaskProvider>
             <GlobalProvider>
-              <div className="flex min-h-screen flex-col">
-                <nav>
+              <div className="flex h-screen flex-col overflow-hidden">
+                <nav className="shrink-0">
                   <Navbar />
                 </nav>
-                <div className="flex flex-1">
-                  <aside className="w-64 shrink-0">
+
+                <div className="flex flex-1 overflow-hidden">
+                  <aside className="w-64 shrink-0 border-r">
                     <Sidebar />
                   </aside>
-                  <div className="flex flex-col w-full">
-                    <main className="flex-1 p-4">{children}</main>
-                    <footer>
+
+                  <div className="flex flex-1 flex-col overflow-hidden">
+                    <main className="flex-1 overflow-y-auto p-4">
+                      {children}
+                    </main>
+
+                    <footer className="shrink-0">
                       <Footer />
                     </footer>
                   </div>

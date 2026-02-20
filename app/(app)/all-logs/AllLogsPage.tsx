@@ -10,7 +10,7 @@ import { DropdownComponent } from "@/components/form/DropdownComponent";
 import { useTask } from "@/context/TaskContext";
 import { useProject } from "@/context/ProjectContext";
 import { useGlobal } from "@/context/GlobalContext";
-import { formatDate } from "@/lib/utils";
+import { formatDate, toDateTimeLocalString } from "@/lib/utils";
 import { TaskType, ProjectType, TaskTypeType, TableColumn } from "@/types";
 import { Plus, Upload } from "lucide-react";
 import { useState } from "react";
@@ -19,11 +19,11 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 function AllLogsPage() {
-  const router = useRouter()
+  const router = useRouter();
   const { taskTypes } = useGlobal();
   const { tasks, loading, addTask, editTask, deleteTask } = useTask();
   const { projects } = useProject();
-  const {companies} = useCompany()
+  const { companies } = useCompany();
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<TaskType | null>(null);
   const [formData, setFormData] = useState({
@@ -156,7 +156,7 @@ function AllLogsPage() {
       render: (row: TaskType) => getProjectName(row.project_id),
     },
     {
-      label: "Task Type",
+      label: "Type",
       key: "task_type",
       render: (row: TaskType) => {
         const taskType = getTaskTypeName(row.task_type);
@@ -205,17 +205,21 @@ function AllLogsPage() {
       label: "Bulk Import",
       icon: Upload,
       onClick: () => {
-        if (companies.length === 0) return toast.info('You must add at least one company first!')
-       router.push('/bulk-import')
+        if (companies.length === 0)
+          return toast.info("You must add at least one company first!");
+        router.push("/bulk-import");
       },
-      variant: "secondary"
+      variant: "outline" as const,
     },
     {
       label: "Add",
       icon: Plus,
       onClick: () => {
-        if (projects.length === 0 || companies.length === 0) return toast.info('You must a add a company and project before you log a task!')
-        reset(); 
+        if (projects.length === 0 || companies.length === 0)
+          return toast.info(
+            "You must a add a company and project before you log a task!",
+          );
+        reset();
         setOpen(true);
       },
     },
@@ -264,7 +268,7 @@ function AllLogsPage() {
           />
 
           <DropdownComponent
-            label="Task Type"
+            label="Type"
             required
             value={formData.task_type}
             onValueChange={(value) => handleSelectChange("task_type", value)}
@@ -281,7 +285,7 @@ function AllLogsPage() {
             </label>
             <input
               type="datetime-local"
-              value={formData.start_time.toISOString().slice(0, 16)}
+              value={toDateTimeLocalString(formData.start_time)}
               onChange={(e) =>
                 setFormData((p) => ({
                   ...p,
@@ -297,11 +301,7 @@ function AllLogsPage() {
             <label className="text-sm font-medium">End Time</label>
             <input
               type="datetime-local"
-              value={
-                formData.end_time
-                  ? formData.end_time.toISOString().slice(0, 16)
-                  : ""
-              }
+              value={toDateTimeLocalString(formData.end_time)}
               onChange={(e) =>
                 setFormData((p) => ({
                   ...p,

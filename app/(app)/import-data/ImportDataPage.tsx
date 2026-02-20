@@ -88,7 +88,7 @@ function ImportDataPage() {
   const fields: { label: string; key: keyof FormType }[] = [
     { label: "Date", key: "date" },
     { label: "Project", key: "project" },
-    { label: "Task Type", key: "task_type" },
+    { label: "Type", key: "task_type" },
     { label: "Description", key: "description" },
     { label: "Start Time", key: "start_time" },
     { label: "End Time", key: "end_time" },

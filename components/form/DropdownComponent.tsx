@@ -20,6 +20,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type BaseOption = Record<string, any>;
 
@@ -59,7 +64,7 @@ export function DropdownComponent<T extends BaseOption>({
   const selectedValue = value != null ? String(value) : "";
 
   const selectedOption = options?.find(
-    (opt) => String(opt[valueKey]) === selectedValue
+    (opt) => String(opt[valueKey]) === selectedValue,
   );
 
   const displayText = selectedOption
@@ -76,26 +81,37 @@ export function DropdownComponent<T extends BaseOption>({
       )}
 
       <div className="relative">
-        <Popover open={open} onOpenChange={setOpen} >
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="dropdownComponent"
-              aria-expanded={open}
-              className={cn(
-                "w-full justify-between",
-                hasError &&
-                  "border-destructive focus-visible:ring-destructive focus-visible:ring-2 focus-visible:ring-offset-2",
-                !hasError && "focus-visible:ring-ring"
-              )}
-            >
-              {displayText}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
+        <Popover open={open} onOpenChange={setOpen}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="dropdownComponent"
+                  aria-expanded={open}
+                  className={cn(
+                    "w-full justify-between",
+                    hasError &&
+                      "border-destructive relative focus-visible:ring-destructive focus-visible:ring-2 focus-visible:ring-offset-2",
+                    !hasError && "focus-visible:ring-ring",
+                  )}
+                >
+                  <span className="truncate  text-start w-[85%]">
+                    {displayText}
+                  </span>
+                  <div className="absolute right-2 bg-inherit group-hover:bg-inherit">
+                    <ChevronsUpDown className="shrink-0 opacity-50" />
+                  </div>
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="start">
+              <p>{displayText}</p>
+            </TooltipContent>
+          </Tooltip>
 
           <PopoverContent className=" p-0" align="end">
-            <Command > 
+            <Command>
               <CommandInput placeholder="Search..." className="h-9" />
               <CommandList>
                 <CommandEmpty>No option found.</CommandEmpty>
@@ -115,16 +131,16 @@ export function DropdownComponent<T extends BaseOption>({
                           onValueChange?.(newValue);
                           setOpen(false);
                         }}
+                        className="w-full flex items-center justify-between"
                       >
-                        {optLabel}
                         <Check
                           className={cn(
-                            "ml-auto h-4 w-4",
                             selectedValue === optValue
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
+                        {optLabel}
                       </CommandItem>
                     );
                   })}
@@ -135,7 +151,6 @@ export function DropdownComponent<T extends BaseOption>({
                       <CommandItem
                         onSelect={() => {
                           // You can handle "add new" logic here (e.g. open modal, call callback, etc.)
-                          
                         }}
                       >
                         <Plus className="mr-2 h-4 w-4" />

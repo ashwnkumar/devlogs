@@ -4,6 +4,7 @@ import FileUpload from "@/components/form/FileUpload";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCompany } from "@/context/CompanyContext";
 import React from "react";
+import { toast } from "sonner";
 
 type ExcelUploadProps = {
   companyId: string;
@@ -15,15 +16,28 @@ type ExcelUploadProps = {
 
 function ExcelUpload({
   companyId,
-  file,
   onCompanyChange,
   onFileChange,
   errors,
 }: ExcelUploadProps) {
   const { companies } = useCompany();
 
-  // No local state needed; use props for controlled inputs
-  console.log("formData (from props)", { company_id: companyId, file });
+  const handleFileChange = (files: File[]) => {
+    const selectedFile = files[0] || null;
+    onFileChange(selectedFile);
+
+    if (selectedFile) {
+      toast.success(`File selected: ${selectedFile.name}`);
+    }
+  };
+
+  const handleCompanyChange = (value: string) => {
+    onCompanyChange(value);
+    const selectedCompany = companies.find((c) => c.id === value);
+    if (selectedCompany) {
+      toast.info(`Company selected: ${selectedCompany.name}`);
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col items-center gap-6 px-6 py-3">
@@ -39,7 +53,7 @@ function ExcelUpload({
             label="Company"
             required
             value={companyId}
-            onValueChange={onCompanyChange}
+            onValueChange={handleCompanyChange}
             options={companies.map((company) => ({
               label: company.name,
               value: company.id,
@@ -52,7 +66,7 @@ function ExcelUpload({
       </Card>
       <FileUpload
         accept={"excel"}
-        onChange={(files) => onFileChange(files[0] || null)}
+        onChange={handleFileChange}
         error={errors?.file}
       />
     </div>

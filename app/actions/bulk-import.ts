@@ -2,6 +2,7 @@
 "use server";
 
 import * as XLSX from "xlsx";
+import { SYSTEM_TASK_TYPES } from "@/types/user";
 
 // Expected shape per row after processing
 export type ExtractedWorkLog = {
@@ -13,6 +14,7 @@ export type ExtractedWorkLog = {
   endTime: Date | null;
   rowNumber: number; // 1-based for user-friendly error display
   originalRow: Record<string, any>; // raw values if needed for debugging/preview
+  isHolidayOrLeave?: boolean; // Flag to identify holiday/leave entries
 };
 
 // Result shape from the action
@@ -59,8 +61,9 @@ export async function extractExcelData(
     // Parse workbook with cellDates enabled
     const workbook = XLSX.read(buffer, {
       type: "buffer",
-      cellDates: true, // Converts Excel dates → JS Date objects
-      dateNF: "yyyy-mm-dd", // Preferred date string format if fallback needed
+      cellDates: false, // ← Critical: get formatted strings, not buggy Date objects
+      cellText: true,
+      dateNF: "dd/mm/yyyy", // Hint to Excel parser for formatting
       cellNF: false,
       sheetStubs: false,
     });
@@ -77,7 +80,7 @@ export async function extractExcelData(
       header: 1,
       defval: null,
       blankrows: false,
-      raw: false, // prefer formatted values over raw numbers/formulas
+      raw: false, // ← Forces formatted strings (what user sees)
     });
 
     if (rawRows.length < 2) {
@@ -119,14 +122,7 @@ export async function extractExcelData(
         "kind",
         "classification",
       ]),
-      task: findColumn(headers, [
-        "task",
-        "description",
-        "what",
-        "title",
-        "notes",
-        "activity",
-      ]),
+      task: findColumn(headers, ["description", "what", "notes", "activity"]),
       startTime: findColumn(headers, [
         "start time",
         "start",
@@ -215,18 +211,44 @@ function normalizeString(val: any): string | null {
 }
 
 function normalizeDate(val: any): Date | null {
-  if (val instanceof Date && !isNaN(val.getTime())) return val;
+  if (val == null) return null;
 
-  if (typeof val === "number" && val > 0) {
-    // Excel serial date (days since 1900-01-01, with leap year bug)
-    // xlsx with cellDates:true usually converts correctly, but fallback:
-    const utc_days = Math.floor(val - 25569);
-    return new Date(utc_days * 86400 * 1000);
+  let str: string;
+  if (typeof val === "string") {
+    str = val.trim();
+  } else if (val instanceof Date) {
+    // Rare fallback if still a Date
+    return val;
+  } else {
+    str = String(val).trim();
   }
 
-  if (typeof val === "string" && val.trim()) {
-    const dt = new Date(val.trim());
-    return isNaN(dt.getTime()) ? null : dt;
+  if (!str) return null;
+
+  // India-common: DD/MM/YYYY or DD-MM-YYYY
+  const ddmmMatch = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+  if (ddmmMatch) {
+    const [, dd, mm, yy] = ddmmMatch.map(Number);
+    const year = yy < 100 ? 2000 + yy : yy;
+    const candidate = new Date(year, mm - 1, dd);
+
+    // Validate (prevents invalid like 32/13)
+    if (
+      !isNaN(candidate.getTime()) &&
+      candidate.getDate() === dd &&
+      candidate.getMonth() === mm - 1
+    ) {
+      // Set to local midnight (no time portion)
+      candidate.setHours(0, 0, 0, 0);
+      return candidate;
+    }
+  }
+
+  // Fallback: standard parse (might hit MM/DD in some cases)
+  const fallback = new Date(str);
+  if (!isNaN(fallback.getTime())) {
+    fallback.setHours(0, 0, 0, 0);
+    return fallback;
   }
 
   return null;

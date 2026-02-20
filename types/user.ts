@@ -10,6 +10,7 @@ export interface UserType {
   email: string;
   preferences: Record<string, unknown>;
   current_company: string | null;
+  role: string;
 }
 
 export interface UserMetadata {
@@ -23,6 +24,8 @@ export type CompanyType = {
   joined_at: string;
   left_at: string | null;
   location: string;
+  work_start: string; // TIME format "HH:MM:SS"
+  work_end: string; // TIME format "HH:MM:SS"
   created_at: string;
   updated_at: string;
 };
